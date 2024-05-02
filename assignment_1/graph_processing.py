@@ -3,8 +3,10 @@ This is a skeleton for the graph processing assignment.
 
 We define a graph processor class with some function skeletons.
 """
-
-from typing import List, Tuple
+# setup:
+from typing import List, Tuple, Set
+import networkx as nx
+network = nx.Graph()
 
 
 class IDNotFoundError(Exception):
@@ -62,13 +64,35 @@ class GraphProcessor:
 
         Args:
             vertex_ids: list of vertex ids
-            edge_ids: liest of edge ids
+            edge_ids: list of edge ids
             edge_vertex_id_pairs: list of tuples of two integer
                 Each tuple is a vertex id pair of the edge.
-            edge_enabled: list of bools indicating of an edge is enabled or not
+            edge_enabled: list of bools indicating if an edge is enabled or not
             source_vertex_id: vertex id of the source in the graph
         """
         # put your implementation here
+        enabled_edges = [edge_id for edge_id, is_true in zip(edge_ids, edge_enabled) if is_true]
+        # 1. vertex_ids and edge_ids should be unique. (IDNotUniqueError)
+        if (len(set(vertex_ids)) != len(vertex_ids)) or (len(set(edge_ids)) != len(edge_ids)):
+            raise IDNotUniqueError
+        # 2. edge_vertex_id_pairs should have the same length as edge_ids. (InputLengthDoesNotMatchError)
+        if len(edge_vertex_id_pairs) != len(edge_ids):
+            raise InputLengthDoesNotMatchError
+        # 3. edge_vertex_id_pairs should contain valid vertex ids. (IDNotFoundError)
+        for x,y in edge_vertex_id_pairs:
+            if x not in vertex_ids or y not in vertex_ids or x == y:
+                raise IDNotFoundError
+        # 4. edge_enabled should have the same length as edge_ids. (InputLengthDoesNotMatchError)
+        if len(edge_enabled) != len(edge_ids):
+            raise InputLengthDoesNotMatchError
+        # 5. source_vertex_id should be a valid vertex id. (IDNotFoundError)
+        if source_vertex_id not in vertex_ids:
+            raise IDNotFoundError
+        # 6. The graph should be fully connected. (GraphNotFullyConnectedError)
+        network.add_nodes_from(vertex_ids)
+        network.add_edges_from(edge_ids)
+        # 7. The graph should not contain cycles. (GraphCycleError)
+        
         pass
 
     def find_downstream_vertices(self, edge_id: int) -> List[int]:
