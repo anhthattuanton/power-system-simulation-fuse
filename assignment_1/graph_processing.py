@@ -4,10 +4,9 @@ This is a skeleton for the graph processing assignment.
 We define a graph processor class with some function skeletons.
 """
 # setup:
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Dict
 import networkx as nx
 network = nx.Graph()
-
 
 class IDNotFoundError(Exception):
     pass
@@ -89,11 +88,18 @@ class GraphProcessor:
         if source_vertex_id not in vertex_ids:
             raise IDNotFoundError
         # 6. The graph should be fully connected. (GraphNotFullyConnectedError)
-        network.add_nodes_from(vertex_ids)
-        network.add_edges_from(edge_ids)
+        for vertex in vertex_ids:
+            if not(any(vertex in each_edges for each_edges in edge_vertex_id_pairs)):
+                #function above returns a false when there is a vertex to which no edge is connected
+                raise GraphNotFullyConnectedError
         # 7. The graph should not contain cycles. (GraphCycleError)
-        
-        pass
+        if len(vertex_ids) != len(edge_ids):
+            raise GraphCycleError
+        self.vertex_ids = vertex_ids
+        self.edge_ids = edge_ids
+        self.edge_vertex_id_pairs = edge_vertex_id_pairs
+        self.edge_enabled = edge_enabled
+        self.source_vertex_id = source_vertex_id
 
     def find_downstream_vertices(self, edge_id: int) -> List[int]:
         """
