@@ -93,7 +93,7 @@ class GraphProcessor:
                 #function above returns a false when there is a vertex to which no edge is connected
                 raise GraphNotFullyConnectedError
         # 7. The graph should not contain cycles. (GraphCycleError)
-        if (len(vertex_ids) + 1) != len(edge_ids):
+        if (len(vertex_ids) - 1) != len(edge_ids):
             raise GraphCycleError
         self.vertex_ids = vertex_ids
         self.edge_ids = edge_ids
