@@ -215,4 +215,6 @@ class GraphProcessor:
                     edge_index = self.edge_vertex_id_pairs.index(vertices_pair)
                     alternative_edges.append(self.edge_ids[edge_index])
                 network.remove_edge(vertices_pair)
+        # recovering the network
+        self.enabled_pairs.append(vertex_ids)
         return alternative_edges
