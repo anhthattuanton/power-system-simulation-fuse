@@ -129,23 +129,36 @@ class GraphProcessor:
         enabled_pairs = [id for id, is_true in zip(self.edge_vertex_id_pairs, self.edge_enabled) if is_true]
         disabled_pairs = [id for id, is_true in zip(self.edge_vertex_id_pairs, self.edge_enabled) if not is_true]
         # need to get disabled pairs or create a list of dict
-        network.remove_edges_from(disabled_pairs)
+        # network.remove_edges_from(disabled_pairs)
         vertex_id_pair = [{key: value} for key, value in zip(enabled_edges, enabled_pairs)]
         if edge_id not in self.edge_ids:
             raise IDNotFoundError
         if edge_id not in enabled_edges:
             return []
-        for keys in vertex_id_pair:
-            if edge_id in keys:
-                vertex_ids = keys[edge_id]
-                network.remove_edge(vertex_ids)
-                for vertex_id in vertex_ids:
-                    if self.source_vertex_id not in nx.dfs_edges(network,source= vertex_id):
-                        downstream_vertices = list(nx.dfs_edges(network,source= vertex_id))
-                        break
+        # first way (take a lot of time during execution):
+        # for keys in vertex_id_pair:
+        #     if edge_id in keys:
+        #         vertex_ids = keys[edge_id]
+        #         network.remove_edge(vertex_ids)
+        #         for vertex_id in vertex_ids:
+        #             if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network,source= vertex_id)):
+        #                 downstream_vertices = list(nx.dfs_edges(network,source= vertex_id))
+        #                 break
+        #         break
+        # another way:
+        index = self.edge_ids.index(edge_id)
+        activated = False
+        vertex_ids = self.edge_vertex_id_pairs[index]
+        network.remove_edge(vertex_ids)
+        for vertex_id in vertex_ids:
+            if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network,source= vertex_id)):
+                network.remove_edges_from(disabled_pairs)
+                downstream_vertices = list(nx.dfs_preorder_nodes(network,source= vertex_id))
+                activated = True
                 break
         # recovering the graph:
-        network.add_edges_from(disabled_pairs)
+        if activated:
+            network.add_edges_from(disabled_pairs)
         network.add_edge(vertex_ids)
         return downstream_vertices
           
