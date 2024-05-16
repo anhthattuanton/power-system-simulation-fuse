@@ -136,5 +136,23 @@ class GraphProcessor:
         Returns:
             A list of alternative edge ids.
         """
-        # put your implementation here
-        pass
+
+        if disabled_edge_id not in self.edge_ids:
+            raise IDNotFoundError
+        if disabled_edge_id not in self.edge_enabled:
+            raise EdgeAlreadyDisabledError
+
+        index = self.edge_ids.index(disabled_edge_id)
+        vertex_ids = self.edge_vertex_id_pairs[index]
+        
+        alternative_edges = [int]
+
+        for vertices_pair in self.edge_vertex_id_pairs:
+            if vertices_pair not in self.enabled_pairs:
+                network.add_edge(vertices_pair)
+                if not nx.cycle_basis(network) and nx.is_connected(network):
+                    edge_index = self.edge_vertex_id_pairs.index(vertices_pair)
+                    alternative_edges.append(self.edge_ids[edge_index])
+                network.remove_edge(vertices_pair)
+        return alternative_edges
+    
