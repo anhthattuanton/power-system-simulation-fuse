@@ -148,13 +148,13 @@ class GraphProcessor:
         # another way:
         index = self.edge_ids.index(edge_id)
         vertex_ids = self.edge_vertex_id_pairs[index]
-        network.remove_edge(vertex_ids)
+        network.remove_edge(*vertex_ids)
         for vertex_id in vertex_ids:
             if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network, source = vertex_id)):
                 downstream_vertices = list(nx.dfs_preorder_nodes(network, source = vertex_id))
                 break
         # recovering the graph:
-        network.add_edge(vertex_ids)
+        network.add_edge(*vertex_ids)
         return downstream_vertices
           
     def find_alternative_edges(self, disabled_edge_id: int) -> List[int]:
@@ -195,26 +195,30 @@ class GraphProcessor:
         # put your implementation here
         if disabled_edge_id not in self.edge_ids:
             raise IDNotFoundError
-        if disabled_edge_id not in self.edge_enabled:
+        if disabled_edge_id not in self.enabled_edge_ids:
             raise EdgeAlreadyDisabledError
         # get data related to disabled_edge_id
         index = self.edge_ids.index(disabled_edge_id)
         vertex_ids = self.edge_vertex_id_pairs[index]
         self.enabled_pairs.remove(vertex_ids)
+        network.remove_edge(*vertex_ids)
         # make a network which all edges are enabled
-        original_network = nx.Graph()
-        original_network.add_edges_from(self.edge_vertex_id_pairs)
-        original_network.remove_edge(vertex_ids)
+        # original_network = nx.Graph()
+        # original_network.add_edges_from(self.edge_vertex_id_pairs)
+        # original_network.remove_edge(vertex_ids)
         # use bfs
-        alternative_edges = [int]
-        all_edges = list(nx.bfs_edges(original_network, source= self.source_vertex_id))
-        for vertices_pair in all_edges:
+        alternative_edges = []
+        # all_edges = list(nx.bfs_edges(original_network, source= self.source_vertex_id))
+        # all_edges = self.edge_vertex_id_pairs
+        for vertices_pair in self.edge_vertex_id_pairs:
             if vertices_pair not in self.enabled_pairs:
-                network.add_edge(vertices_pair)
-                if not nx.cycle_basis(network) and nx.is_connected(network):
+                network.add_edge(*vertices_pair)
+                if  not nx.cycle_basis(network) and nx.is_connected(network):
                     edge_index = self.edge_vertex_id_pairs.index(vertices_pair)
                     alternative_edges.append(self.edge_ids[edge_index])
-                network.remove_edge(vertices_pair)
+                network.remove_edge(*vertices_pair)
         # recovering the network
         self.enabled_pairs.append(vertex_ids)
+        network.add_edge(*vertex_ids)
+        alternative_edges.remove(disabled_edge_id)
         return alternative_edges
