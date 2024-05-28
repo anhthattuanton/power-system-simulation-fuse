@@ -71,8 +71,19 @@ class GraphProcessor:
             edge_enabled: list of bools indicating of an edge is enabled or not
             source_vertex_id: vertex id of the source in the graph
         """
-        # put your implementation here
-        pass
+        enabled_edge_ids = [id for id, is_true in zip(edge_ids, edge_enabled) if is_true]
+        enabled_pairs = [id for id, is_true in zip(edge_vertex_id_pairs, edge_enabled) if is_true]
+        enabled_vertex_ids = {id for edge in enabled_pairs for id in edge}
+        network.add_edges_from(enabled_pairs)
+       
+        self.vertex_ids = vertex_ids
+        self.edge_ids = edge_ids
+        self.edge_vertex_id_pairs = edge_vertex_id_pairs
+        self.edge_enabled = edge_enabled
+        self.source_vertex_id = source_vertex_id
+        self.enabled_vertex_ids = enabled_vertex_ids
+        self.enabled_edge_ids = enabled_edge_ids
+        self.enabled_pairs = enabled_pairs
 
     def find_downstream_vertices(self, edge_id: int) -> List[int]:
         """
