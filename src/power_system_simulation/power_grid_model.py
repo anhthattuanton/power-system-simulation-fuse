@@ -38,10 +38,12 @@ def powerGridModelling(
     reactive_load_profile = pd.read_parquet(reactive_sym_load_path)
     if not active_load_profile.index.equals(reactive_load_profile.index) or not active_load_profile.columns.equals(reactive_load_profile.columns):
         raise ProfilesNotMatching
-    load_profile = initialize_array("update", "sym_load", active_load_profile)
+    load_profile = initialize_array("update", "sym_load", active_load_profile.shape)
     load_profile["id"] = active_load_profile.columns.to_numpy()
     load_profile["p_specified"] = active_load_profile.to_numpy()
     load_profile["q_specified"] = reactive_load_profile.to_numpy()
     update_dataset = {"sym_load": load_profile}
     assert_valid_batch_data(input_data= dataset, update_data= update_dataset, calculation_type= CalculationType.power_flow)
+    output_data = model.calculate_power_flow(update_data=update_dataset, calculation_method=CalculationMethod.newton_raphson)
+    
     pass
