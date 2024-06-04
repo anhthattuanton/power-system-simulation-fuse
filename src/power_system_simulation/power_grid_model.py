@@ -45,5 +45,28 @@ def powerGridModelling(
     update_dataset = {"sym_load": load_profile}
     assert_valid_batch_data(input_data= dataset, update_data= update_dataset, calculation_type= CalculationType.power_flow)
     output_data = model.calculate_power_flow(update_data=update_dataset, calculation_method=CalculationMethod.newton_raphson)
+    timestamps = active_load_profile.index
+    df_u_pu = pd.DataFrame(output_data["node"]["u_pu"])
+    arr_node_id = output_data["node"]["id"][0,:]
+    # print(df_u_pu)
+    # print(df_node_id)
+    u_idx_max = np.argmax(df_u_pu,axis= 1)
+    u_max = list(np.max(df_u_pu,axis= 1))
+    node_id = []
+    for n in u_idx_max:
+        node_id.append(arr_node_id[n])
+    # print(u_max)
+    frame = {u_max,node_id}
+    df_result = pd.DataFrame(frame,index=timestamps)
+    print(df_result)
     
+    # max_voltage_idx = np.where(max(output_data["node"]["u_pu"]))
+    # min_voltage_idx = np.where(min(output_data["node"]["u_pu"]))
+    # max_voltage = output_data["node"]["u_pu"][max_voltage_idx]
+    # min_voltage = output_data["node"]["u_pu"][min_voltage_idx]
+    # max_voltage_id = output_data["node"]["id"][max_voltage_idx]
+    # min_voltage_id = output_data["node"]["id"][min_voltage_idx]
+    # frame = {max_voltage, max_voltage_id, min_voltage, min_voltage_id}
+    # results_voltage = pd.DataFrame(data=frame,index=active_load_profile.index)
+    # print(results_voltage)
     pass
