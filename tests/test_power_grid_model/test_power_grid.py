@@ -11,7 +11,7 @@ workshop examples
 """
 from power_system_simulation.power_grid_model import powerGridModelling
 
-powerGridModelling(data_path= data_path, active_sym_load_path= active_sym_load_path, reactive_sym_load_path= reactive_sym_load_path)
-
+df_result = powerGridModelling(data_path= data_path, active_sym_load_path= active_sym_load_path, reactive_sym_load_path= reactive_sym_load_path)
+print(df_result)
 # import pandas as pd
 # print(pd.read_parquet(active_sym_load_path))
