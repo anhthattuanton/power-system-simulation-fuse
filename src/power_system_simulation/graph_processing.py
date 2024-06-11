@@ -73,6 +73,9 @@ class GraphProcessor:
         # 1. vertex_ids and edge_ids should be unique. (IDNotUniqueError)
         if (len(set(vertex_ids)) != len(vertex_ids)) or (len(set(edge_ids)) != len(edge_ids)):
             raise IDNotUniqueError
+        for n in vertex_ids:
+            if n in edge_ids:
+                raise IDNotUniqueError
         # 2. edge_vertex_id_pairs should have the same length as edge_ids. (InputLengthDoesNotMatchError)
         if len(edge_vertex_id_pairs) != len(edge_ids):
             raise InputLengthDoesNotMatchError
