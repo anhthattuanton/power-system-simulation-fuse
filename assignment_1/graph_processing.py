@@ -3,9 +3,10 @@ This is a skeleton for the graph processing assignment.
 
 We define a graph processor class with some function skeletons.
 """
-
-from typing import List, Tuple
-
+# setup:
+from typing import List, Tuple, Set, Dict
+import networkx as nx
+network = nx.Graph()
 
 class IDNotFoundError(Exception):
     pass
@@ -62,14 +63,47 @@ class GraphProcessor:
 
         Args:
             vertex_ids: list of vertex ids
-            edge_ids: liest of edge ids
+            edge_ids: list of edge ids
             edge_vertex_id_pairs: list of tuples of two integer
                 Each tuple is a vertex id pair of the edge.
-            edge_enabled: list of bools indicating of an edge is enabled or not
+            edge_enabled: list of bools indicating if an edge is enabled or not
             source_vertex_id: vertex id of the source in the graph
         """
         # put your implementation here
-        pass
+        # 1. vertex_ids and edge_ids should be unique. (IDNotUniqueError)
+        if (len(set(vertex_ids)) != len(vertex_ids)) or (len(set(edge_ids)) != len(edge_ids)):
+            raise IDNotUniqueError
+        # 2. edge_vertex_id_pairs should have the same length as edge_ids. (InputLengthDoesNotMatchError)
+        if len(edge_vertex_id_pairs) != len(edge_ids):
+            raise InputLengthDoesNotMatchError
+        # 3. edge_vertex_id_pairs should contain valid vertex ids. (IDNotFoundError)
+        for x,y in edge_vertex_id_pairs:
+            if x not in vertex_ids or y not in vertex_ids or x == y:
+                raise IDNotFoundError
+        # 4. edge_enabled should have the same length as edge_ids. (InputLengthDoesNotMatchError)
+        if len(edge_enabled) != len(edge_ids):
+            raise InputLengthDoesNotMatchError
+        # 5. source_vertex_id should be a valid vertex id. (IDNotFoundError)
+        if source_vertex_id not in vertex_ids:
+            raise IDNotFoundError
+        # 6. The graph should be fully connected. (GraphNotFullyConnectedError)
+        enabled_edge_ids = [id for id, is_true in zip(edge_ids, edge_enabled) if is_true]
+        enabled_pairs = [id for id, is_true in zip(edge_vertex_id_pairs, edge_enabled) if is_true]
+        enabled_vertex_ids = {id for edge in enabled_pairs for id in edge}
+        network.add_edges_from(enabled_pairs)
+        if not nx.is_connected(network):
+            raise GraphNotFullyConnectedError
+        # 7. The graph should not contain cycles. (GraphCycleError)
+        if len(enabled_vertex_ids) - 1 != len(enabled_edge_ids):
+            raise GraphCycleError
+        self.vertex_ids = vertex_ids
+        self.edge_ids = edge_ids
+        self.edge_vertex_id_pairs = edge_vertex_id_pairs
+        self.edge_enabled = edge_enabled
+        self.source_vertex_id = source_vertex_id
+        self.enabled_vertex_ids = enabled_vertex_ids
+        self.enabled_edge_ids = enabled_edge_ids
+        self.enabled_pairs = enabled_pairs
 
     def find_downstream_vertices(self, edge_id: int) -> List[int]:
         """
@@ -96,8 +130,33 @@ class GraphProcessor:
             A list of all downstream vertices.
         """
         # put your implementation here
-        pass
 
+        if edge_id not in self.edge_ids:
+            raise IDNotFoundError
+        if edge_id not in self.enabled_edge_ids:
+            return []
+        # first way (take a lot of time during execution):
+        # for keys in vertex_id_pair:
+        #     if edge_id in keys:
+        #         vertex_ids = keys[edge_id]
+        #         network.remove_edge(vertex_ids)
+        #         for vertex_id in vertex_ids:
+        #             if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network,source= vertex_id)):
+        #                 downstream_vertices = list(nx.dfs_edges(network,source= vertex_id))
+        #                 break
+        #         break
+        # another way:
+        index = self.edge_ids.index(edge_id)
+        vertex_ids = self.edge_vertex_id_pairs[index]
+        network.remove_edge(*vertex_ids)
+        for vertex_id in vertex_ids:
+            if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network, source = vertex_id)):
+                downstream_vertices = list(nx.dfs_preorder_nodes(network, source = vertex_id))
+                break
+        # recovering the graph:
+        network.add_edge(*vertex_ids)
+        return downstream_vertices
+          
     def find_alternative_edges(self, disabled_edge_id: int) -> List[int]:
         """
         Given an enabled edge, do the following analysis:
@@ -134,4 +193,32 @@ class GraphProcessor:
             A list of alternative edge ids.
         """
         # put your implementation here
-        pass
+        if disabled_edge_id not in self.edge_ids:
+            raise IDNotFoundError
+        if disabled_edge_id not in self.enabled_edge_ids:
+            raise EdgeAlreadyDisabledError
+        # get data related to disabled_edge_id
+        index = self.edge_ids.index(disabled_edge_id)
+        vertex_ids = self.edge_vertex_id_pairs[index]
+        self.enabled_pairs.remove(vertex_ids)
+        network.remove_edge(*vertex_ids)
+        # make a network which all edges are enabled
+        # original_network = nx.Graph()
+        # original_network.add_edges_from(self.edge_vertex_id_pairs)
+        # original_network.remove_edge(vertex_ids)
+        # use bfs
+        alternative_edges = []
+        # all_edges = list(nx.bfs_edges(original_network, source= self.source_vertex_id))
+        # all_edges = self.edge_vertex_id_pairs
+        for vertices_pair in self.edge_vertex_id_pairs:
+            if vertices_pair not in self.enabled_pairs:
+                network.add_edge(*vertices_pair)
+                if  not nx.cycle_basis(network) and nx.is_connected(network):
+                    edge_index = self.edge_vertex_id_pairs.index(vertices_pair)
+                    alternative_edges.append(self.edge_ids[edge_index])
+                network.remove_edge(*vertices_pair)
+        # recovering the network
+        self.enabled_pairs.append(vertex_ids)
+        network.add_edge(*vertex_ids)
+        alternative_edges.remove(disabled_edge_id)
+        return alternative_edges
