@@ -12,8 +12,11 @@ workshop examples
 from power_system_simulation.power_grid_model_ass2 import powerGridModelling, dataConversion
 
 dataset, active_load_profile, reactive_load_profile = dataConversion(data_path= data_path, active_sym_load_path= active_sym_load_path, reactive_sym_load_path= reactive_sym_load_path)
-df_result = powerGridModelling(dataset= dataset,active_load_profile= active_load_profile,reactive_load_profile= reactive_load_profile)
-print(df_result)
+df_result_u_pu, df_result_loading_pu = powerGridModelling(dataset= dataset,active_load_profile= active_load_profile,reactive_load_profile= reactive_load_profile)
+print("u_pu results:")
+print(df_result_u_pu)
+print("loading results:")
+print(df_result_loading_pu)
 #import pandas as pd
 # print(set(pd.read_parquet(active_sym_load_path).columns))
 #print(type(pd.read_parquet(active_sym_load_path).index))

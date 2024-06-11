@@ -83,12 +83,11 @@ def powerGridModelling(
         max_node_id.append(arr_node_id[n])
     for m in u_idx_min:
         min_node_id.append(arr_node_id[m])
-    df_result_node = pd.DataFrame(data={"Timestamp":timestamps,
-                                   "u_pu_max":u_max,
+    df_result_node = pd.DataFrame(data={"u_pu_max":u_max.to_numpy(),
                                    "Node_ID_max":max_node_id,
-                                   "u_pu_min":u_min,
-                                   "Node_ID_min":min_node_id})
-    df_result_node.set_index("Timestamp",inplace=True)
+                                   "u_pu_min":u_min.to_numpy(),
+                                   "Node_ID_min":min_node_id},
+                                   index=timestamps)
 
     """
     2nd table:
@@ -113,7 +112,7 @@ def powerGridModelling(
                                    index=arr_line_id)
 
     # return 2 dataframes
-    return df_result_line
+    return df_result_node,df_result_line
     # max_voltage_idx = np.where(max(output_data["node"]["u_pu"]))
     # min_voltage_idx = np.where(min(output_data["node"]["u_pu"]))
     # max_voltage = output_data["node"]["u_pu"][max_voltage_idx]
