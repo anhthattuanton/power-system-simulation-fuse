@@ -1,5 +1,5 @@
 from power_system_simulation.graph_processing import GraphProcessor
-from power_system_simulation.power_grid_model import powerGridModelling,dataConversion
+from power_system_simulation.power_grid_modelling import powerGridModelling,dataConversion
 
 import numpy as np
 import pandas as pd
@@ -62,15 +62,10 @@ class GridAnalysis:
         if not set(feeder_ids).issubset(set(dataset["line"]["id"])):
             raise IDNotFoundError
         for id in feeder_ids:
-            idx.append(np.asarray(dataset["line"]["id"] == id).nonzero())
+            idx.append(np.asarray(dataset["line"]["id"] == id).nonzero()[0].item())
         for index in idx:
             if dataset["line"]["from_node"][index] not in dataset["transformer"]["to_node"]:
                 raise InvalidFeederError
-        """
-        Make use of the GraphProcessor to check if grid is fully connected and acyclic.
-        Could be faster if we have more time because GraphProcessor will validates the
-        data again, which is done already by dataConversion function already.
-        """
 
         vertex_ids = [id for id in dataset["node"]["id"]]
         edge_ids = [id for id in dataset["line"]["id"]]
@@ -83,13 +78,24 @@ class GridAnalysis:
                        edge_vertex_id_pairs= edge_vertex_id_pairs, 
                        edge_enabled= edge_enabled, 
                        source_vertex_id= sourve_vertex_id)
-        if ev_pool.index != active_load_profile.index:
+        if list(ev_pool.index) != list(active_load_profile.index):
             raise InvalidProfilesError
         if active_load_profile.columns.to_list() != reactive_load_profile.columns.to_list():
             raise InvalidProfilesError
         if not set(active_load_profile.columns).issubset(set(dataset["sym_load"]["id"])):
             raise InvalidProfilesError
-        
+        # The number of EV charging profile is at least the same as the number of sym_load.
+        if len(ev_pool.columns.to_list()) >= len(list(dataset["sym_load"]["id"])):
+            raise InvalidProfilesError
         model = PowerGridModel(dataset)
+        self.input_data = dataset
+        self.model = model
+        self.grid = grid
+        
+    def alternative_grid_topology(self, edge_id: int) -> pd.DataFrame:
+        if edge_id not in self.grid.edge_enabled:
+            raise IDNotFoundError
+        id = int(np.asarray(self.input_data["line"]["id"] == edge_id))
+        pass
         
         

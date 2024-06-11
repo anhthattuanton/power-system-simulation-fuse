@@ -33,8 +33,11 @@ def dataConversion(
                             calculation_type= CalculationType.power_flow)
     active_load_profile = pd.read_parquet(active_sym_load_path)
     reactive_load_profile = pd.read_parquet(reactive_sym_load_path)
-    if active_load_profile.index != reactive_load_profile.index:
+    if active_load_profile.shape != reactive_load_profile.shape:
         raise InvalidProfilesError
+    for timestamps in list(active_load_profile.index):
+        if timestamps not in list(reactive_load_profile.index):
+            raise InvalidProfilesError
     return dataset, active_load_profile, reactive_load_profile
 
 def powerGridModelling(
