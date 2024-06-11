@@ -63,6 +63,7 @@ def powerGridModelling(
                             calculation_type= CalculationType.power_flow)
     model = PowerGridModel(dataset)
     output_data = model.calculate_power_flow(update_data=update_dataset,
+                                             output_component_types= "node",
                                              calculation_method=CalculationMethod.newton_raphson)
     """
     1st table:

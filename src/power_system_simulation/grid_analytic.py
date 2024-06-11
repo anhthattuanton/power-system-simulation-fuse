@@ -1,5 +1,5 @@
-from power_system_simulation.graph_processing import GraphProcessor
-from power_system_simulation.power_grid_modelling import powerGridModelling,dataConversion
+from graph_processing import GraphProcessor
+from power_grid_modelling import powerGridModelling,dataConversion
 
 import numpy as np
 import pandas as pd
@@ -39,6 +39,9 @@ class InvalidFeederError(Exception):
 class InvalidProfilesError(Exception):
     pass
 
+class LineNotFullyConnectedError(Exception):
+    pass
+
 class GridAnalysis:
     def __init__(
             self,
@@ -71,7 +74,7 @@ class GridAnalysis:
         edge_ids = [id for id in dataset["line"]["id"]]
         edge_vertex_id_pairs = [zip(dataset["line"]["from_node"], 
                                     dataset["line"]["to_node"])]
-        edge_enabled = [dataset["line"]["to_status"] != 0]
+        edge_enabled = (dataset["line"]["to_status"] != [0]).tolist()
         sourve_vertex_id = dataset["source"]["id"]
         grid = GraphProcessor(vertex_ids= vertex_ids, 
                        edge_ids= edge_ids, 
@@ -91,11 +94,73 @@ class GridAnalysis:
         self.input_data = dataset
         self.model = model
         self.grid = grid
+        self.active_load_profile = active_load_profile
+        self.reactive_load_profile = reactive_load_profile
         
     def alternative_grid_topology(self, edge_id: int) -> pd.DataFrame:
         if edge_id not in self.grid.edge_enabled:
             raise IDNotFoundError
-        id = int(np.asarray(self.input_data["line"]["id"] == edge_id))
-        pass
+        id = np.asarray(self.input_data["line"]["id"] == edge_id).nonzero()[0].item()
+        if self.input_data["line"]["from_status"][id] != [1] or self.input_data["line"]["to_status"][id] != [1] :
+            raise LineNotFullyConnectedError
+        model_rep = self.model.copy()
+        update_line = initialize_array("update","line",1)
+        update_line["id"] = [edge_id]
+        update_line["from_status"] = [0]
+        update_line["to_status"] = [0]
+        model_rep.update(update_data={"line":update_line})
+        alternative_lines = self.grid.find_alternative_edges(disabled_edge_id= edge_id)
+        # batch = []
+        counter = 0
+        max_loading = []
+        max_loading_idx = []
+        timestamps = []
+        if alternative_lines:
+            # update_lines = initialize_array("update","line",(len(alternative_lines),1))
+            # update_lines["id"] = [[id] for id in alternative_lines]
+            # update_lines["to_status"] = [[1] for n in alternative_lines]
+            # output_data = model_rep.calculate_power_flow(update_data= {"line":update_lines},
+            #                                              output_component_types= "line",
+            #                                              calculation_method= CalculationMethod.newton_raphson,
+            #                                              threading= 0)
+            # max_loading = np.max(output_data["line"]["loading"], axis= 1)
+            # max_loading_index = np.argmax(output_data["line"]["loading"], axis= 1)
+            # loading_index = output_data["line"]["id"][0,:]
+            # max_loading_idx = [loading_index[n] for n in max_loading_index]
+            # df_result = pd.DataFrame(data= {"Alternative_line_ID": alternative_lines,
+            #                                 "Loading_max": max_loading,
+            #                                 "Max_loading_line_ID": max_loading_idx,
+            #                                 })
+            for line_id in alternative_lines:
+                batch_model = model_rep.copy()
+                update_line = initialize_array("update","line",1)
+                update_line["id"] = [line_id]
+                update_line["to_status"] = [1]
+                batch_model.update(update_data={"line":update_line})
+                load_profile = initialize_array("update","sym_load",self.active_load_profile.shape)
+                load_profile["id"] = self.active_load_profile.columns.to_numpy()
+                load_profile["p_specified"] = self.active_load_profile.to_numpy()
+                load_profile["q_specified"] = self.reactive_load_profile.to_numpy()
+                update_data = {"sym_load": load_profile}
+                assert_valid_batch_data(input_data= batch_model,
+                                        update_data= update_data,
+                                        calculation_type= CalculationType.power_flow)
+                output_data = model_rep.calculate_power_flow(update_data= update_data,
+                                                                output_component_types= "line",
+                                                                calculation_method=CalculationMethod.newton_raphson)
+                max_loading.append(max(np.max(output_data["line"]["loading"],axis = 1)))
+                # max_loading_index = np.argmax(output_data["line"]["loading"], axis= 1)
+                max_loading_index = np.where(output_data["line"]["loading"] == max_loading[counter])
+                # loading_index = output_data["line"]["id"][0,:]
+                # max_loading_idx[counter] = [loading_index[n] for n in max_loading_index]
+                max_loading_idx.append(self.input_data["line"]["id"][max_loading_index[1]])
+                timestamps.append(self.active_load_profile.index[max_loading_index[0]])
+                counter = counter + 1
+        df_result = pd.DataFrame(data= {"alternative_line_id": alternative_lines,
+                                        "loading_max": max_loading,
+                                        "loading_max_line_id": max_loading_idx,
+                                        "timestamps": timestamps})
+        return df_result
+    
         
         
