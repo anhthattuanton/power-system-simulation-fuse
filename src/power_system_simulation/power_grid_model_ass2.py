@@ -25,20 +25,37 @@ from power_grid_model.utils import (
 class ProfilesNotMatching(Exception):
     pass
 
-def powerGridModelling(
+class InvalidProfilesError(Exception):
+    pass
+
+def dataConversion(
         data_path: str,
         active_sym_load_path: str,
         reactive_sym_load_path: str):
-    with open(data_path) as fp0:
-        data = fp0.read()
+    with open(data_path) as fp:
+        data = fp.read()
     dataset = json_deserialize(data)
     assert_valid_input_data(input_data= dataset, 
                             calculation_type= CalculationType.power_flow)
-    model = PowerGridModel(dataset)
     active_load_profile = pd.read_parquet(active_sym_load_path)
     reactive_load_profile = pd.read_parquet(reactive_sym_load_path)
-    if not active_load_profile.index.equals(reactive_load_profile.index) or not active_load_profile.columns.equals(reactive_load_profile.columns):
-        raise ProfilesNotMatching
+    if active_load_profile.shape != reactive_load_profile.shape:
+       raise InvalidProfilesError
+    return dataset, active_load_profile, reactive_load_profile
+
+def powerGridModelling(
+        dataset: dict,
+        active_load_profile: pd.DataFrame,
+        reactive_load_profile: pd.DataFrame):
+    # with open(data_path) as fp0:
+    #     data = fp0.read()
+    # dataset = json_deserialize(data)
+    # assert_valid_input_data(input_data= dataset, 
+    #                         calculation_type= CalculationType.power_flow)
+    # active_load_profile = pd.read_parquet(active_sym_load_path)
+    # reactive_load_profile = pd.read_parquet(reactive_sym_load_path)
+    # if not active_load_profile.index.equals(reactive_load_profile.index) or not active_load_profile.columns.equals(reactive_load_profile.columns):
+    #     raise ProfilesNotMatching
     load_profile = initialize_array("update", "sym_load", active_load_profile.shape)
     load_profile["id"] = active_load_profile.columns.to_numpy()
     load_profile["p_specified"] = active_load_profile.to_numpy()
@@ -47,6 +64,7 @@ def powerGridModelling(
     assert_valid_batch_data(input_data= dataset, 
                             update_data= update_dataset, 
                             calculation_type= CalculationType.power_flow)
+    model = PowerGridModel(dataset)
     output_data = model.calculate_power_flow(update_data=update_dataset,
                                              calculation_method=CalculationMethod.newton_raphson)
     """
@@ -88,14 +106,14 @@ def powerGridModelling(
         max_line_timestamp.append(timestamps[n])
     for m in loading_idx_min:
         min_line_timestamp.append(timestamps[m])
-    df_result_line = pd.DataFrame(data={"loading_pu_max":loading_max,
+    df_result_line = pd.DataFrame(data={"loading_pu_max":loading_max.to_numpy(),
                                    "timestamp_max":max_line_timestamp,
-                                   "loading_pu_min":loading_min,
+                                   "loading_pu_min":loading_min.to_numpy(),
                                    "timestamp_min":min_line_timestamp},
                                    index=arr_line_id)
 
     # return 2 dataframes
-    pass
+    return df_result_line
     # max_voltage_idx = np.where(max(output_data["node"]["u_pu"]))
     # min_voltage_idx = np.where(min(output_data["node"]["u_pu"]))
     # max_voltage = output_data["node"]["u_pu"][max_voltage_idx]
