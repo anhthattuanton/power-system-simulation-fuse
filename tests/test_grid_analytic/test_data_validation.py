@@ -11,5 +11,5 @@ import numpy as np
 # dataset = json_deserialize(data)
 # print(pd.DataFrame(dataset))
 # print(pd.read_parquet("tests/test_grid_analytic/ev_active_power_profile.parquet").columns.to_list())
-data = dc(data_path= "tests/test_grid_analytic/input_network_data.json",active_sym_load_path="tests/test_grid_analytic/active_power_profile.parquet", reactive_sym_load_path="tests/test_grid_analytic/reactive_power_profile.parquet")[1]
+data = dc(data_path= "tests/test_grid_analytic/input_network_data.json",active_sym_load_path="tests/test_grid_analytic/active_power_profile.parquet", reactive_sym_load_path="tests/test_grid_analytic/reactive_power_profile.parquet")[0]
 print(pd.DataFrame(data=data["line"]))

@@ -80,8 +80,8 @@ class GraphProcessor:
         if len(edge_vertex_id_pairs) != len(edge_ids):
             raise InputLengthDoesNotMatchError
         # 3. edge_vertex_id_pairs should contain valid vertex ids. (IDNotFoundError)
-        for x,y in edge_vertex_id_pairs:
-            if x not in vertex_ids or y not in vertex_ids or x == y:
+        for id in edge_vertex_id_pairs:
+            if id[0] not in vertex_ids or id[1] not in vertex_ids or id[0] == id[1]:
                 raise IDNotFoundError
         # 4. edge_enabled should have the same length as edge_ids. (InputLengthDoesNotMatchError)
         if len(edge_enabled) != len(edge_ids):

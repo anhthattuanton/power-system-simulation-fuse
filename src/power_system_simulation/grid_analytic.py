@@ -1,9 +1,8 @@
-from graph_processing import GraphProcessor
-from power_grid_modelling import powerGridModelling,dataConversion
+from power_system_simulation.graph_processing import GraphProcessor
+from power_system_simulation.power_grid_modelling import powerGridModelling,dataConversion
 
 import numpy as np
 import pandas as pd
-# import matplotlib.pyplot as plt
 import json
 import networkx as nx
 
@@ -62,25 +61,30 @@ class GridAnalysis:
             raise InvalidNumberOfTransformerError
         if len(set(feeder_ids)) != len(feeder_ids):
             raise IDNotUniqueError
-        if not set(feeder_ids).issubset(set(dataset["line"]["id"])):
-            raise IDNotFoundError
+        for id in feeder_ids:
+            if id not in dataset["line"]["id"].tolist():
+                raise IDNotFoundError
+        # if not set(feeder_ids).issubset(set(dataset["line"]["id"])):
+        #     raise IDNotFoundError
         for id in feeder_ids:
             idx.append(np.asarray(dataset["line"]["id"] == id).nonzero()[0].item())
         for index in idx:
             if dataset["line"]["from_node"][index] not in dataset["transformer"]["to_node"]:
+                print(idx)
                 raise InvalidFeederError
-
-        vertex_ids = [id for id in dataset["node"]["id"]]
-        edge_ids = [id for id in dataset["line"]["id"]]
-        edge_vertex_id_pairs = [zip(dataset["line"]["from_node"], 
+            
+        vertex_ids = [id for id in dataset["node"]["id"]] + dataset["source"]["id"].tolist()
+        
+        edge_ids = [id for id in dataset["line"]["id"]] 
+        edge_vertex_id_pairs = [id for id in zip(dataset["line"]["from_node"], 
                                     dataset["line"]["to_node"])]
-        edge_enabled = (dataset["line"]["to_status"] != [0]).tolist()
-        sourve_vertex_id = dataset["source"]["id"]
+        edge_enabled = (dataset["line"]["to_status"] != [0])
+        source_vertex_id = dataset["source"]["id"]
         grid = GraphProcessor(vertex_ids= vertex_ids, 
                        edge_ids= edge_ids, 
                        edge_vertex_id_pairs= edge_vertex_id_pairs, 
                        edge_enabled= edge_enabled, 
-                       source_vertex_id= sourve_vertex_id)
+                       source_vertex_id= source_vertex_id)
         if list(ev_pool.index) != list(active_load_profile.index):
             raise InvalidProfilesError
         if active_load_profile.columns.to_list() != reactive_load_profile.columns.to_list():
@@ -88,7 +92,7 @@ class GridAnalysis:
         if not set(active_load_profile.columns).issubset(set(dataset["sym_load"]["id"])):
             raise InvalidProfilesError
         # The number of EV charging profile is at least the same as the number of sym_load.
-        if len(ev_pool.columns.to_list()) >= len(list(dataset["sym_load"]["id"])):
+        if len(ev_pool.columns.to_list()) < len(list(dataset["sym_load"]["id"])):
             raise InvalidProfilesError
         model = PowerGridModel(dataset)
         self.input_data = dataset
@@ -97,8 +101,8 @@ class GridAnalysis:
         self.active_load_profile = active_load_profile
         self.reactive_load_profile = reactive_load_profile
         
-    def alternative_grid_topology(self, edge_id: int) -> pd.DataFrame:
-        if edge_id not in self.grid.edge_enabled:
+    def alternative_grid_topology(self, edge_id: int):
+        if edge_id not in self.grid.edge_ids:
             raise IDNotFoundError
         id = np.asarray(self.input_data["line"]["id"] == edge_id).nonzero()[0].item()
         if self.input_data["line"]["from_status"][id] != [1] or self.input_data["line"]["to_status"][id] != [1] :
@@ -136,31 +140,33 @@ class GridAnalysis:
                 update_line = initialize_array("update","line",1)
                 update_line["id"] = [line_id]
                 update_line["to_status"] = [1]
-                batch_model.update(update_data={"line":update_line})
+                update_data = {"line": update_line}
+                batch_model.update(update_data= update_data)
                 load_profile = initialize_array("update","sym_load",self.active_load_profile.shape)
                 load_profile["id"] = self.active_load_profile.columns.to_numpy()
                 load_profile["p_specified"] = self.active_load_profile.to_numpy()
                 load_profile["q_specified"] = self.reactive_load_profile.to_numpy()
                 update_data = {"sym_load": load_profile}
-                assert_valid_batch_data(input_data= batch_model,
+                assert_valid_batch_data(input_data= self.input_data,
                                         update_data= update_data,
                                         calculation_type= CalculationType.power_flow)
-                output_data = model_rep.calculate_power_flow(update_data= update_data,
-                                                                output_component_types= "line",
+                output_data = batch_model.calculate_power_flow(update_data= update_data,
+                                                                output_component_types= ["line"],
                                                                 calculation_method=CalculationMethod.newton_raphson)
                 max_loading.append(max(np.max(output_data["line"]["loading"],axis = 1)))
                 # max_loading_index = np.argmax(output_data["line"]["loading"], axis= 1)
                 max_loading_index = np.where(output_data["line"]["loading"] == max_loading[counter])
                 # loading_index = output_data["line"]["id"][0,:]
                 # max_loading_idx[counter] = [loading_index[n] for n in max_loading_index]
-                max_loading_idx.append(self.input_data["line"]["id"][max_loading_index[1]])
-                timestamps.append(self.active_load_profile.index[max_loading_index[0]])
+                max_loading_idx.append(int(self.input_data["line"]["id"][max_loading_index[1]]))
+                timestamps.append(self.active_load_profile.index[max_loading_index[0]][0])
                 counter = counter + 1
         df_result = pd.DataFrame(data= {"alternative_line_id": alternative_lines,
                                         "loading_max": max_loading,
                                         "loading_max_line_id": max_loading_idx,
                                         "timestamps": timestamps})
         return df_result
+    pass
     
         
         
