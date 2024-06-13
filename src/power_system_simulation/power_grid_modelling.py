@@ -1,9 +1,11 @@
 # import 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import json
 
 from power_grid_model import (
-    # LoadGenType,
+    LoadGenType,
     PowerGridModel,
     CalculationType,
     CalculationMethod,
@@ -16,8 +18,12 @@ from power_grid_model.validation import (
 )
 
 from power_grid_model.utils import (
-    json_deserialize
+    json_deserialize, 
+    json_serialize
 )
+
+class ProfilesNotMatching(Exception):
+    pass
 
 class InvalidProfilesError(Exception):
     pass
@@ -34,10 +40,7 @@ def dataConversion(
     active_load_profile = pd.read_parquet(active_sym_load_path)
     reactive_load_profile = pd.read_parquet(reactive_sym_load_path)
     if active_load_profile.shape != reactive_load_profile.shape:
-        raise InvalidProfilesError
-    for timestamps in list(active_load_profile.index):
-        if timestamps not in list(reactive_load_profile.index):
-            raise InvalidProfilesError
+       raise InvalidProfilesError
     return dataset, active_load_profile, reactive_load_profile
 
 def powerGridModelling(
@@ -63,7 +66,6 @@ def powerGridModelling(
                             calculation_type= CalculationType.power_flow)
     model = PowerGridModel(dataset)
     output_data = model.calculate_power_flow(update_data=update_dataset,
-                                             output_component_types= "node",
                                              calculation_method=CalculationMethod.newton_raphson)
     """
     1st table:
@@ -81,18 +83,36 @@ def powerGridModelling(
         max_node_id.append(arr_node_id[n])
     for m in u_idx_min:
         min_node_id.append(arr_node_id[m])
-    df_result_node = pd.DataFrame(data={"Timestamp":timestamps,
-                                   "u_pu_max":u_max,
+    df_result_node = pd.DataFrame(data={"u_pu_max":u_max.to_numpy(),
                                    "Node_ID_max":max_node_id,
-                                   "u_pu_min":u_min,
-                                   "Node_ID_min":min_node_id})
-    df_result_node.set_index("Timestamp",inplace=True)
+                                   "u_pu_min":u_min.to_numpy(),
+                                   "Node_ID_min":min_node_id},
+                                   index=timestamps)
+
     """
     2nd table:
     """
-    
+
+    df_loading_pu = pd.DataFrame(output_data["line"]["loading"])
+    arr_line_id = output_data["line"]["id"][0,:]
+    loading_idx_max = np.argmax(df_loading_pu,axis= 0)
+    loading_max = np.max(df_loading_pu,axis= 0)
+    loading_idx_min = np.argmin(df_loading_pu,axis= 0)
+    loading_min = np.min(df_loading_pu,axis= 0)
+    max_line_timestamp = []
+    min_line_timestamp = []
+    for n in loading_idx_max:
+        max_line_timestamp.append(timestamps[n])
+    for m in loading_idx_min:
+        min_line_timestamp.append(timestamps[m])
+    df_result_line = pd.DataFrame(data={"loading_pu_max":loading_max.to_numpy(),
+                                   "timestamp_max":max_line_timestamp,
+                                   "loading_pu_min":loading_min.to_numpy(),
+                                   "timestamp_min":min_line_timestamp},
+                                   index=arr_line_id)
+
     # return 2 dataframes
-    pass
+    return df_result_node,df_result_line
     # max_voltage_idx = np.where(max(output_data["node"]["u_pu"]))
     # min_voltage_idx = np.where(min(output_data["node"]["u_pu"]))
     # max_voltage = output_data["node"]["u_pu"][max_voltage_idx]
@@ -102,4 +122,3 @@ def powerGridModelling(
     # frame = {max_voltage, max_voltage_id, min_voltage, min_voltage_id}
     # results_voltage = pd.DataFrame(data=frame,index=active_load_profile.index)
     # print(results_voltage)
-    
