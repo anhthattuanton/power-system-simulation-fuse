@@ -87,11 +87,12 @@ def powerGridModelling(
         max_node_id.append(arr_node_id[n])
     for m in u_idx_min:
         min_node_id.append(arr_node_id[m])
-    df_result_node = pd.DataFrame(data={"u_pu_max":u_max.to_numpy(),
-                                   "Node_ID_max":max_node_id,
-                                   "u_pu_min":u_min.to_numpy(),
-                                   "Node_ID_min":min_node_id},
+    df_result_node = pd.DataFrame(data={"Max_Voltage":u_max.to_numpy(),
+                                   "Max_Voltage_Node":max_node_id,
+                                   "Min_Voltage":u_min.to_numpy(),
+                                   "Min_Voltage_Node":min_node_id},
                                    index=timestamps)
+    df_result_node.index.name = "Timestamp"
 
     """
     2nd table:
@@ -109,11 +110,12 @@ def powerGridModelling(
         max_line_timestamp.append(timestamps[n])
     for m in loading_idx_min:
         min_line_timestamp.append(timestamps[m])
-    df_result_line = pd.DataFrame(data={"loading_pu_max":loading_max.to_numpy(),
-                                   "timestamp_max":max_line_timestamp,
-                                   "loading_pu_min":loading_min.to_numpy(),
-                                   "timestamp_min":min_line_timestamp},
+    df_result_line = pd.DataFrame(data={"Max_loading":loading_max.to_numpy(),
+                                   "Max_Loading_Timestamp":max_line_timestamp,
+                                   "Min_Loading":loading_min.to_numpy(),
+                                   "Min_Loading_Timestamp":min_line_timestamp},
                                    index=arr_line_id)
+    df_result_line.index.name = "Line_ID"
 
     # return 2 dataframes
     return df_result_node,df_result_line

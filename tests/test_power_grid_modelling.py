@@ -28,9 +28,11 @@ data = dataConversion(data_path= "tests/test_power_grid_model/input_network_data
                     active_sym_load_path= "tests/test_power_grid_model/active_power_profile.parquet", 
                     reactive_sym_load_path= "tests/test_power_grid_model/reactive_power_profile.parquet")
 
-def test_whole_function():
+def test_table1():
     result = powerGridModelling(dataset= data[0], active_load_profile= data[1], reactive_load_profile= data[2])
-    assert True   
+    expected_result = pd.read_parquet("tests/test_power_grid_model/output_table_row_per_timestamp.parquet")
+    assert result[0].equals(expected_result)
+
 
   
 def test_profiles_not_matching():
