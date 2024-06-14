@@ -110,7 +110,32 @@ class GraphProcessor:
             A list of all downstream vertices.
         """
         # put your implementation here
-        pass
+
+        if edge_id not in self.edge_ids:
+            raise IDNotFoundError
+        if edge_id not in self.enabled_edge_ids:
+            return []
+        # first way (take a lot of time during execution):
+        # for keys in vertex_id_pair:
+        #     if edge_id in keys:
+        #         vertex_ids = keys[edge_id]
+        #         network.remove_edge(vertex_ids)
+        #         for vertex_id in vertex_ids:
+        #             if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network,source= vertex_id)):
+        #                 downstream_vertices = list(nx.dfs_edges(network,source= vertex_id))
+        #                 break
+        #         break
+        # another way:
+        index = self.edge_ids.index(edge_id)
+        vertex_ids = self.edge_vertex_id_pairs[index]
+        network.remove_edge(*vertex_ids)
+        for vertex_id in vertex_ids:
+            if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network, source = vertex_id)):
+                downstream_vertices = list(nx.dfs_preorder_nodes(network, source = vertex_id))
+                break
+        # recovering the graph:
+        network.add_edge(*vertex_ids)
+        return downstream_vertices
 
     def find_alternative_edges(self, disabled_edge_id: int) -> List[int]:
         """
