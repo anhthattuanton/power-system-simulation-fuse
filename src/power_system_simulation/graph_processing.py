@@ -223,5 +223,6 @@ class GraphProcessor:
         # recovering the network
         self.enabled_pairs.append(vertex_ids)
         network.add_edge(*vertex_ids)
-        alternative_edges.remove(disabled_edge_id)
+        if disabled_edge_id in alternative_edges:
+            alternative_edges.remove(disabled_edge_id)
         return alternative_edges

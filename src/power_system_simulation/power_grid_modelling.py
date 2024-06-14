@@ -22,11 +22,16 @@ from power_grid_model.utils import (
     json_serialize
 )
 
-class ProfilesNotMatching(Exception):
-    pass
+# class ProfilesNotMatching(Exception):
+#     pass
 
 class InvalidProfilesError(Exception):
     pass
+
+def dataValidation(active_load_profile: pd.DataFrame,
+                   reactive_load_profile: pd.DataFrame):
+    if active_load_profile.index.to_list() != reactive_load_profile.index.to_list():
+       raise InvalidProfilesError
 
 def dataConversion(
         data_path: str,
@@ -39,8 +44,7 @@ def dataConversion(
                             calculation_type= CalculationType.power_flow)
     active_load_profile = pd.read_parquet(active_sym_load_path)
     reactive_load_profile = pd.read_parquet(reactive_sym_load_path)
-    if active_load_profile.shape != reactive_load_profile.shape:
-       raise InvalidProfilesError
+    dataValidation(active_load_profile= active_load_profile, reactive_load_profile= reactive_load_profile)
     return dataset, active_load_profile, reactive_load_profile
 
 def powerGridModelling(
