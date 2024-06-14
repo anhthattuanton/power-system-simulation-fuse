@@ -4,9 +4,9 @@ This is a skeleton for the graph processing assignment.
 We define a graph processor class with some function skeletons.
 """
 # setup:
-from typing import List, Tuple, Set, Dict
+from typing import List, Tuple
 import networkx as nx
-network = nx.Graph()
+
 
 class IDNotFoundError(Exception):
     pass
@@ -93,8 +93,13 @@ class GraphProcessor:
         enabled_edge_ids = [id for id, is_true in zip(edge_ids, edge_enabled) if is_true]
         enabled_pairs = [id for id, is_true in zip(edge_vertex_id_pairs, edge_enabled) if is_true]
         enabled_vertex_ids = {id for edge in enabled_pairs for id in edge}
-        network.add_edges_from(enabled_pairs)
-        if not nx.is_connected(network):
+        network = nx.Graph()
+        network.add_nodes_from(vertex_ids)
+        for edge, enabled in zip(edge_vertex_id_pairs, edge_enabled):
+            if enabled:
+                network.add_edge(*edge)
+        if not nx.is_connected(G= network):
+            # print("hello world")
             raise GraphNotFullyConnectedError
         # 7. The graph should not contain cycles. (GraphCycleError)
         if len(enabled_vertex_ids) - 1 != len(enabled_edge_ids):
@@ -107,6 +112,7 @@ class GraphProcessor:
         self.enabled_vertex_ids = enabled_vertex_ids
         self.enabled_edge_ids = enabled_edge_ids
         self.enabled_pairs = enabled_pairs
+        self.network = network
 
     def find_downstream_vertices(self, edge_id: int) -> List[int]:
         """
@@ -151,13 +157,14 @@ class GraphProcessor:
         # another way:
         index = self.edge_ids.index(edge_id)
         vertex_ids = self.edge_vertex_id_pairs[index]
-        network.remove_edge(*vertex_ids)
+        self.network.remove_edge(*vertex_ids)
+        downstream_vertices = []
         for vertex_id in vertex_ids:
-            if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network, source = vertex_id)):
-                downstream_vertices = list(nx.dfs_preorder_nodes(network, source = vertex_id))
+            if self.source_vertex_id not in list(nx.dfs_preorder_nodes(self.network, source = vertex_id)):
+                downstream_vertices = list(nx.dfs_preorder_nodes(self.network, source = vertex_id))
                 break
         # recovering the graph:
-        network.add_edge(*vertex_ids)
+        self.network.add_edge(*vertex_ids)
         return downstream_vertices
           
     def find_alternative_edges(self, disabled_edge_id: int) -> List[int]:
@@ -204,7 +211,7 @@ class GraphProcessor:
         index = self.edge_ids.index(disabled_edge_id)
         vertex_ids = self.edge_vertex_id_pairs[index]
         self.enabled_pairs.remove(vertex_ids)
-        network.remove_edge(*vertex_ids)
+        self.network.remove_edge(*vertex_ids)
         # make a network which all edges are enabled
         # original_network = nx.Graph()
         # original_network.add_edges_from(self.edge_vertex_id_pairs)
@@ -215,14 +222,15 @@ class GraphProcessor:
         # all_edges = self.edge_vertex_id_pairs
         for vertices_pair in self.edge_vertex_id_pairs:
             if vertices_pair not in self.enabled_pairs:
-                network.add_edge(*vertices_pair)
-                if  not nx.cycle_basis(network) and nx.is_connected(network):
+                self.network.add_edge(*vertices_pair)
+                if  not nx.cycle_basis(self.network) and nx.is_connected(self.network):
                     edge_index = self.edge_vertex_id_pairs.index(vertices_pair)
                     alternative_edges.append(self.edge_ids[edge_index])
-                network.remove_edge(*vertices_pair)
+                self.network.remove_edge(*vertices_pair)
         # recovering the network
         self.enabled_pairs.append(vertex_ids)
-        network.add_edge(*vertex_ids)
+        self.network.add_edge(*vertex_ids)
         if disabled_edge_id in alternative_edges:
             alternative_edges.remove(disabled_edge_id)
         return alternative_edges
+

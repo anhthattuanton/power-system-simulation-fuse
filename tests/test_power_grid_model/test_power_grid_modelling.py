@@ -14,9 +14,6 @@ from power_grid_model import PowerGridModel, CalculationMethod, CalculationType
 from power_grid_model import initialize_array
 from power_grid_model.validation import ValidationException
 
-"""
-Tests for assignment 2
-"""
 def test_invalid_input():
     with pytest.raises(ValidationException):
         data = dataConversion(data_path= "tests/test_power_grid_model/input_network_data_invalid.json", 
@@ -32,8 +29,6 @@ def test_table1():
     result = powerGridModelling(dataset= data[0], active_load_profile= data[1], reactive_load_profile= data[2])
     expected_result = pd.read_parquet("tests/test_power_grid_model/output_table_row_per_timestamp.parquet")
     assert result[0].equals(expected_result)
-
-
   
 def test_profiles_not_matching():
     new_data = data[2].copy()
