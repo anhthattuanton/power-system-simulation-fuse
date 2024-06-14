@@ -117,9 +117,7 @@ class GridAnalysis:
                     load_idx = np.where(self.input_data["sym_load"]["node"] == m)
                     loads_feeder.extend(list(self.input_data["sym_load"]["id"][load_idx]))
             EV_ids.extend(random.sample(loads_feeder, nr_of_EV))
-        print(EV_ids)
         ev_profiles = random.sample(list(self.ev_pool.columns), len(EV_ids))
-        print(ev_profiles)
         for _ in range(len(ev_profiles)):
             ev_prof = self.ev_pool.iloc[:, ev_profiles[_]].tolist()
             self.active_load_profile[EV_ids[_]] = self.active_load_profile[EV_ids[_]] + ev_prof
