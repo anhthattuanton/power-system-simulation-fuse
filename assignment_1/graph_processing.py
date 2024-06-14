@@ -1,224 +1,188 @@
-"""
-This is a skeleton for the graph processing assignment.
+import pytest
+from power_system_simulation.graph_processing import (
+    GraphProcessor, GraphNotFullyConnectedError, GraphCycleError, IDNotFoundError, EdgeAlreadyDisabledError, InputLengthDoesNotMatchError, IDNotUniqueError
+)
 
-We define a graph processor class with some function skeletons.
-"""
-# setup:
-from typing import List, Tuple, Set, Dict
-import networkx as nx
-network = nx.Graph()
+def test_find_downstream_vertices():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
+    assert set(gp.find_downstream_vertices(1)) == {2, 3}
 
-class IDNotFoundError(Exception):
-    pass
+def test_find_downstream_vertices_disabled_edge():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, False, True]
+    source_vertex_id = 0
+    with pytest.raises(GraphNotFullyConnectedError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
+def test_find_alternative_edges():
+    vertex_ids = [0, 1, 2, 3, 4, 5]
+    edge_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 0), (1, 4), (2, 5)]
+    edge_enabled = [True, True, True, True, True, True, False, False]
+    source_vertex_id = 0
+    with pytest.raises(GraphCycleError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-class InputLengthDoesNotMatchError(Exception):
-    pass
+def test_find_alternative_edges_no_alternative():
+    vertex_ids = [0, 1, 2, 3, 4, 5]
+    edge_ids = [1, 2, 3, 4, 5, 6, 7, 8]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 0), (1, 4), (2, 5)]
+    edge_enabled = [True, True, True, True, True, True, True, True]
+    source_vertex_id = 0
+    with pytest.raises(GraphCycleError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
+def test_graph_without_cycles():
+    vertex_ids = [0, 1, 2, 3, 4]
+    edge_ids = [1, 2, 3, 4]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3), (3, 4)]
+    edge_enabled = [True, True, True, True]
+    source_vertex_id = 0
+    gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
+    assert set(gp.find_downstream_vertices(1)) == {2, 3, 4}
 
-class IDNotUniqueError(Exception):
-    pass
+def test_find_downstream_vertices_edge_not_found():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
+    with pytest.raises(IDNotFoundError):
+        gp.find_downstream_vertices(4)
 
+def test_find_alternative_edges_edge_not_found():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
+    with pytest.raises(IDNotFoundError):
+        gp.find_alternative_edges(4)
 
-class GraphNotFullyConnectedError(Exception):
-    pass
+def test_find_alternative_edges_already_disabled():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, False, True]
+    source_vertex_id = 0
+    gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id, validate_connected=False)
+    with pytest.raises(EdgeAlreadyDisabledError):
+        gp.find_alternative_edges(2)
 
+def test_find_alternative_edges_no_cycle():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3, 4]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3), (3, 0)]
+    edge_enabled = [True, True, True, True]
+    source_vertex_id = 0
+    with pytest.raises(GraphCycleError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-class GraphCycleError(Exception):
-    pass
+def test_unique_vertex_edge_ids():
+    vertex_ids = [0, 1, 2, 2]  # Duplicate vertex ID
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    with pytest.raises(IDNotUniqueError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
+def test_input_length_mismatch():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2)]  # Length mismatch
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    with pytest.raises(InputLengthDoesNotMatchError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-class EdgeAlreadyDisabledError(Exception):
-    pass
+def test_invalid_vertex_in_edge_pairs():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 4), (2, 3)]  # 4 is invalid
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    with pytest.raises(IDNotFoundError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
+def test_invalid_source_vertex():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, True, True]
+    source_vertex_id = 4  # Invalid source vertex
+    with pytest.raises(IDNotFoundError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-class GraphProcessor:
-    """
-    General documentation of this class.
-    You need to describe the purpose of this class and the functions in it.
-    We are using an undirected graph in the processor.
-    """
+def test_non_unique_vertex_ids():
+    vertex_ids = [0, 1, 1, 3]  # Non-unique vertex ID
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    with pytest.raises(IDNotUniqueError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-    def __init__(
-        self,
-        vertex_ids: List[int],
-        edge_ids: List[int],
-        edge_vertex_id_pairs: List[Tuple[int, int]],
-        edge_enabled: List[bool],
-        source_vertex_id: int,
-    ) -> None:
-        """
-        Initialize a graph processor object with an undirected graph.
-        Only the edges which are enabled are taken into account.
-        Check if the input is valid and raise exceptions if not.
-        The following conditions should be checked:
-            1. vertex_ids and edge_ids should be unique. (IDNotUniqueError)
-            2. edge_vertex_id_pairs should have the same length as edge_ids. (InputLengthDoesNotMatchError)
-            3. edge_vertex_id_pairs should contain valid vertex ids. (IDNotFoundError)
-            4. edge_enabled should have the same length as edge_ids. (InputLengthDoesNotMatchError)
-            5. source_vertex_id should be a valid vertex id. (IDNotFoundError)
-            6. The graph should be fully connected. (GraphNotFullyConnectedError)
-            7. The graph should not contain cycles. (GraphCycleError)
-        If one certain condition is not satisfied, the error in the parentheses should be raised.
+def test_non_unique_edge_ids():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 2]  # Non-unique edge ID
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    with pytest.raises(IDNotUniqueError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-        Args:
-            vertex_ids: list of vertex ids
-            edge_ids: list of edge ids
-            edge_vertex_id_pairs: list of tuples of two integer
-                Each tuple is a vertex id pair of the edge.
-            edge_enabled: list of bools indicating if an edge is enabled or not
-            source_vertex_id: vertex id of the source in the graph
-        """
-        # put your implementation here
-        # 1. vertex_ids and edge_ids should be unique. (IDNotUniqueError)
-        if (len(set(vertex_ids)) != len(vertex_ids)) or (len(set(edge_ids)) != len(edge_ids)):
-            raise IDNotUniqueError
-        # 2. edge_vertex_id_pairs should have the same length as edge_ids. (InputLengthDoesNotMatchError)
-        if len(edge_vertex_id_pairs) != len(edge_ids):
-            raise InputLengthDoesNotMatchError
-        # 3. edge_vertex_id_pairs should contain valid vertex ids. (IDNotFoundError)
-        for x,y in edge_vertex_id_pairs:
-            if x not in vertex_ids or y not in vertex_ids or x == y:
-                raise IDNotFoundError
-        # 4. edge_enabled should have the same length as edge_ids. (InputLengthDoesNotMatchError)
-        if len(edge_enabled) != len(edge_ids):
-            raise InputLengthDoesNotMatchError
-        # 5. source_vertex_id should be a valid vertex id. (IDNotFoundError)
-        if source_vertex_id not in vertex_ids:
-            raise IDNotFoundError
-        # 6. The graph should be fully connected. (GraphNotFullyConnectedError)
-        enabled_edge_ids = [id for id, is_true in zip(edge_ids, edge_enabled) if is_true]
-        enabled_pairs = [id for id, is_true in zip(edge_vertex_id_pairs, edge_enabled) if is_true]
-        enabled_vertex_ids = {id for edge in enabled_pairs for id in edge}
-        network.add_edges_from(enabled_pairs)
-        if not nx.is_connected(network):
-            raise GraphNotFullyConnectedError
-        # 7. The graph should not contain cycles. (GraphCycleError)
-        if len(enabled_vertex_ids) - 1 != len(enabled_edge_ids):
-            raise GraphCycleError
-        self.vertex_ids = vertex_ids
-        self.edge_ids = edge_ids
-        self.edge_vertex_id_pairs = edge_vertex_id_pairs
-        self.edge_enabled = edge_enabled
-        self.source_vertex_id = source_vertex_id
-        self.enabled_vertex_ids = enabled_vertex_ids
-        self.enabled_edge_ids = enabled_edge_ids
-        self.enabled_pairs = enabled_pairs
+def test_mismatched_length_edge_id_pairs():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2)]  # Mismatched length
+    edge_enabled = [True, True, True]
+    source_vertex_id = 0
+    with pytest.raises(InputLengthDoesNotMatchError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-    def find_downstream_vertices(self, edge_id: int) -> List[int]:
-        """
-        Given an edge id, return all the vertices which are in the downstream of the edge,
-            with respect to the source vertex.
-            Including the downstream vertex of the edge itself!
+def test_mismatched_length_edge_enabled():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [True, True]  # Mismatched length
+    source_vertex_id = 0
+    with pytest.raises(InputLengthDoesNotMatchError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-        Only enabled edges should be taken into account in the analysis.
-        If the given edge_id is a disabled edge, it should return empty list.
-        If the given edge_id does not exist, it should raise IDNotFoundError.
+def test_find_downstream_vertices_all_disabled_edges():
+    vertex_ids = [0, 1, 2, 3]
+    edge_ids = [1, 2, 3]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3)]
+    edge_enabled = [False, False, False]
+    source_vertex_id = 0
+    gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
+    assert gp.find_downstream_vertices(1) == []
 
+def test_graph_not_fully_connected():
+    vertex_ids = [0, 1, 2, 3, 4]
+    edge_ids = [1, 2, 3, 4]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3), (3, 4)]
+    edge_enabled = [True, True, True, False]
+    source_vertex_id = 0
+    with pytest.raises(GraphNotFullyConnectedError):
+        gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id)
 
-        For example, given the following graph (all edges enabled):
-
-            vertex_0 (source) --edge_1-- vertex_2 --edge_3-- vertex_4
-
-        Call find_downstream_vertices with edge_id=1 will return [2, 4]
-        Call find_downstream_vertices with edge_id=3 will return [4]
-
-        Args:
-            edge_id: edge id to be searched
-
-        Returns:
-            A list of all downstream vertices.
-        """
-        # put your implementation here
-
-        if edge_id not in self.edge_ids:
-            raise IDNotFoundError
-        if edge_id not in self.enabled_edge_ids:
-            return []
-        # first way (take a lot of time during execution):
-        # for keys in vertex_id_pair:
-        #     if edge_id in keys:
-        #         vertex_ids = keys[edge_id]
-        #         network.remove_edge(vertex_ids)
-        #         for vertex_id in vertex_ids:
-        #             if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network,source= vertex_id)):
-        #                 downstream_vertices = list(nx.dfs_edges(network,source= vertex_id))
-        #                 break
-        #         break
-        # another way:
-        index = self.edge_ids.index(edge_id)
-        vertex_ids = self.edge_vertex_id_pairs[index]
-        network.remove_edge(*vertex_ids)
-        for vertex_id in vertex_ids:
-            if self.source_vertex_id not in list(nx.dfs_preorder_nodes(network, source = vertex_id)):
-                downstream_vertices = list(nx.dfs_preorder_nodes(network, source = vertex_id))
-                break
-        # recovering the graph:
-        network.add_edge(*vertex_ids)
-        return downstream_vertices
-          
-    def find_alternative_edges(self, disabled_edge_id: int) -> List[int]:
-        """
-        Given an enabled edge, do the following analysis:
-            If the edge is going to be disabled,
-                which (currently disabled) edge can be enabled to ensure
-                that the graph is again fully connected and acyclic?
-            Return a list of all alternative edges.
-        If the disabled_edge_id is not a valid edge id, it should raise IDNotFoundError.
-        If the disabled_edge_id is already disabled, it should raise EdgeAlreadyDisabledError.
-        If there are no alternative to make the graph fully connected again, it should return empty list.
-
-
-        For example, given the following graph:
-
-        vertex_0 (source) --edge_1(enabled)-- vertex_2 --edge_9(enabled)-- vertex_10
-                 |                               |
-                 |                           edge_7(disabled)
-                 |                               |
-                 -----------edge_3(enabled)-- vertex_4
-                 |                               |
-                 |                           edge_8(disabled)
-                 |                               |
-                 -----------edge_5(enabled)-- vertex_6
-
-        Call find_alternative_edges with disabled_edge_id=1 will return [7]
-        Call find_alternative_edges with disabled_edge_id=3 will return [7, 8]
-        Call find_alternative_edges with disabled_edge_id=5 will return [8]
-        Call find_alternative_edges with disabled_edge_id=9 will return []
-
-        Args:
-            disabled_edge_id: edge id (which is currently enabled) to be disabled
-
-        Returns:
-            A list of alternative edge ids.
-        """
-        # put your implementation here
-        if disabled_edge_id not in self.edge_ids:
-            raise IDNotFoundError
-        if disabled_edge_id not in self.enabled_edge_ids:
-            raise EdgeAlreadyDisabledError
-        # get data related to disabled_edge_id
-        index = self.edge_ids.index(disabled_edge_id)
-        vertex_ids = self.edge_vertex_id_pairs[index]
-        self.enabled_pairs.remove(vertex_ids)
-        network.remove_edge(*vertex_ids)
-        # make a network which all edges are enabled
-        # original_network = nx.Graph()
-        # original_network.add_edges_from(self.edge_vertex_id_pairs)
-        # original_network.remove_edge(vertex_ids)
-        # use bfs
-        alternative_edges = []
-        # all_edges = list(nx.bfs_edges(original_network, source= self.source_vertex_id))
-        # all_edges = self.edge_vertex_id_pairs
-        for vertices_pair in self.edge_vertex_id_pairs:
-            if vertices_pair not in self.enabled_pairs:
-                network.add_edge(*vertices_pair)
-                if  not nx.cycle_basis(network) and nx.is_connected(network):
-                    edge_index = self.edge_vertex_id_pairs.index(vertices_pair)
-                    alternative_edges.append(self.edge_ids[edge_index])
-                network.remove_edge(*vertices_pair)
-        # recovering the network
-        self.enabled_pairs.append(vertex_ids)
-        network.add_edge(*vertex_ids)
-        alternative_edges.remove(disabled_edge_id)
-        return alternative_edges
+def test_alternative_edges_when_disabled():
+    vertex_ids = [0, 1, 2, 3, 4]
+    edge_ids = [1, 2, 3, 4, 5]
+    edge_vertex_id_pairs = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)]
+    edge_enabled = [True, True, True, True, False]
+    source_vertex_id = 0
+    gp = GraphProcessor(vertex_ids, edge_ids, edge_vertex_id_pairs, edge_enabled, source_vertex_id, validate_connected=False)
+    alternative_edges = gp.find_alternative_edges(4)
+    assert alternative_edges == [5]
