@@ -99,7 +99,8 @@ class GraphProcessor:
         if not nx.is_connected(G= network):
             raise GraphNotFullyConnectedError
         # 7. The graph should not contain cycles. (GraphCycleError)
-        if len(enabled_vertex_ids) - 1 != len(enabled_edge_ids):
+        # if len(enabled_vertex_ids) - 1 != len(enabled_edge_ids):
+        if nx.cycle_basis(network):
             raise GraphCycleError
         self.vertex_ids = vertex_ids
         self.edge_ids = edge_ids
