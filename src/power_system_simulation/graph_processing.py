@@ -95,11 +95,8 @@ class GraphProcessor:
         enabled_vertex_ids = {id for edge in enabled_pairs for id in edge}
         network = nx.Graph()
         network.add_nodes_from(vertex_ids)
-        for edge, enabled in zip(edge_vertex_id_pairs, edge_enabled):
-            if enabled:
-                network.add_edge(*edge)
+        network.add_edges_from(enabled_pairs)
         if not nx.is_connected(G= network):
-            # print("hello world")
             raise GraphNotFullyConnectedError
         # 7. The graph should not contain cycles. (GraphCycleError)
         if len(enabled_vertex_ids) - 1 != len(enabled_edge_ids):
@@ -109,7 +106,6 @@ class GraphProcessor:
         self.edge_vertex_id_pairs = edge_vertex_id_pairs
         self.edge_enabled = edge_enabled
         self.source_vertex_id = source_vertex_id
-        self.enabled_vertex_ids = enabled_vertex_ids
         self.enabled_edge_ids = enabled_edge_ids
         self.enabled_pairs = enabled_pairs
         self.network = network
@@ -233,4 +229,5 @@ class GraphProcessor:
         if disabled_edge_id in alternative_edges:
             alternative_edges.remove(disabled_edge_id)
         return alternative_edges
+        
 
