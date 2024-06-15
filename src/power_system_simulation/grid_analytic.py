@@ -1,5 +1,5 @@
 from power_system_simulation.graph_processing import GraphProcessor
-from power_system_simulation.power_grid_modelling import powerGridModelling,dataConversion
+
 
 import numpy as np
 import pandas as pd
@@ -13,6 +13,11 @@ from power_grid_model import (
     CalculationMethod,
     MeasuredTerminalType,
     initialize_array
+)
+
+from power_grid_model.utils import (
+    json_deserialize, 
+    json_serialize
 )
 
 from power_grid_model.validation import (
@@ -50,10 +55,22 @@ class GridAnalysis:
             reactive_load_profile_path: str,
             ev_pool_path: str
     ) -> None:
-        dataset, active_load_profile, reactive_load_profile = dataConversion(data_path=data_path, 
-                                                                             active_sym_load_path= active_load_profile_path, 
-                                                                             reactive_sym_load_path= reactive_load_profile_path)
+        with open(data_path) as fp:
+            data = fp.read()
+        dataset = json_deserialize(data= data)
         ev_pool = pd.read_parquet(ev_pool_path)
+        active_load_profile = pd.read_parquet(active_load_profile_path)
+        reactive_load_profile = pd.read_parquet(reactive_load_profile_path)
+        if active_load_profile.index.to_list() != reactive_load_profile.index.to_list():
+            raise InvalidProfilesError
+        load_profile = initialize_array("update", "sym_load", active_load_profile.shape)
+        load_profile["id"] = active_load_profile.columns.to_numpy()
+        load_profile["p_specified"] = active_load_profile.to_numpy()
+        load_profile["q_specified"] = reactive_load_profile.to_numpy()
+        update_dataset = {"sym_load": load_profile}
+        assert_valid_batch_data(input_data= dataset, 
+                            update_data= update_dataset, 
+                            calculation_type= CalculationType.power_flow)
         idx = []
         if len(dataset["source"]) != 1:
             raise InvalidNumberOfSourceError
@@ -101,7 +118,23 @@ class GridAnalysis:
         self.active_load_profile = active_load_profile
         self.reactive_load_profile = reactive_load_profile
         
+    
     def alternative_grid_topology(self, edge_id: int):
+        """
+        In this functionality, the user would like to know alternative grid topology when a given line is out of service.
+        The user will provide the Line ID which is going to be out of service.
+
+        * If the given Line ID is not a valid `line`, raise proper error.
+        * If the given Line ID is not connected at both sides in the base case (`from_status` and `to_status` should be both `1`), raise proper error.
+        * You need to disconnect the designated line, set both `from_status` and `to_status` to `0`. And find list of Line IDs which are currently disconnected, and can be connected to make the grid fully connected again. Tip: use the graph function from Assignment 1.
+        * For each alternative `line` to be connected (set `to_status` to `1`), run the time-series power flow for the whole time period.
+        * Return a table to summarize the results, each row in the table is one alternative scenario. The following columns are needed:
+        * The alternative Line ID to be connected
+        * The maximum loading among of lines and timestamps
+        * The Line ID of this maximum
+        * The timestamp of this maximum
+        * If there are no alternatives, it still should return an empty table with the correct data format and heading. You should test this behaviour in the unit tests.
+        """
         if edge_id not in self.grid.edge_ids:
             raise IDNotFoundError
         id = np.asarray(self.input_data["line"]["id"] == edge_id).nonzero()[0].item()
@@ -114,27 +147,11 @@ class GridAnalysis:
         update_line["to_status"] = [0]
         model_rep.update(update_data={"line":update_line})
         alternative_lines = self.grid.find_alternative_edges(disabled_edge_id= edge_id)
-        # batch = []
         counter = 0
         max_loading = []
         max_loading_idx = []
         timestamps = []
         if alternative_lines:
-            # update_lines = initialize_array("update","line",(len(alternative_lines),1))
-            # update_lines["id"] = [[id] for id in alternative_lines]
-            # update_lines["to_status"] = [[1] for n in alternative_lines]
-            # output_data = model_rep.calculate_power_flow(update_data= {"line":update_lines},
-            #                                              output_component_types= "line",
-            #                                              calculation_method= CalculationMethod.newton_raphson,
-            #                                              threading= 0)
-            # max_loading = np.max(output_data["line"]["loading"], axis= 1)
-            # max_loading_index = np.argmax(output_data["line"]["loading"], axis= 1)
-            # loading_index = output_data["line"]["id"][0,:]
-            # max_loading_idx = [loading_index[n] for n in max_loading_index]
-            # df_result = pd.DataFrame(data= {"Alternative_line_ID": alternative_lines,
-            #                                 "Loading_max": max_loading,
-            #                                 "Max_loading_line_ID": max_loading_idx,
-            #                                 })
             for line_id in alternative_lines:
                 batch_model = model_rep.copy()
                 update_line = initialize_array("update","line",1)
@@ -154,10 +171,7 @@ class GridAnalysis:
                                                                 output_component_types= ["line"],
                                                                 calculation_method=CalculationMethod.newton_raphson)
                 max_loading.append(max(np.max(output_data["line"]["loading"],axis = 1)))
-                # max_loading_index = np.argmax(output_data["line"]["loading"], axis= 1)
                 max_loading_index = np.where(output_data["line"]["loading"] == max_loading[counter])
-                # loading_index = output_data["line"]["id"][0,:]
-                # max_loading_idx[counter] = [loading_index[n] for n in max_loading_index]
                 max_loading_idx.append(int(self.input_data["line"]["id"][max_loading_index[1]]))
                 timestamps.append(self.active_load_profile.index[max_loading_index[0]][0])
                 counter = counter + 1
@@ -166,7 +180,7 @@ class GridAnalysis:
                                         "loading_max_line_id": max_loading_idx,
                                         "timestamps": timestamps})
         return df_result
-    pass
+
     
         
         
