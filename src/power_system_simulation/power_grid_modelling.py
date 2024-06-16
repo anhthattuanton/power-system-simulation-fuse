@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import json
+from typing import Dict
 
 from power_grid_model import (
     LoadGenType,
@@ -18,7 +18,7 @@ from power_grid_model.validation import (
 )
 
 from power_grid_model.utils import (
-    json_deserialize, 
+    json_deserialize_from_file, 
     json_serialize
 )
 
@@ -27,16 +27,23 @@ class InvalidProfilesError(Exception):
 
 class PowerGridModelling:
     def __init__(self,
-                 data_path: str,
-                 active_load_profile_path: str,
-                 reactive_load_profile_path: str) -> None:
-        with open(data_path) as fp:
-            data = fp.read()
-        dataset = json_deserialize(data= data)
-        assert_valid_input_data(input_data= dataset,
-                                calculation_type= CalculationType.power_flow)
-        active_load_profile = pd.read_parquet(active_load_profile_path)
-        reactive_load_profile = pd.read_parquet(reactive_load_profile_path)
+                 data_path: str | Dict[str, np.ndarray | Dict[str, np.ndarray]],
+                 active_load_profile_path: str | pd.DataFrame,
+                 reactive_load_profile_path: str | pd.DataFrame) -> None:
+        if type(data_path) == str:
+            dataset = json_deserialize_from_file(data_path)
+            assert_valid_input_data(input_data= dataset,
+                                    calculation_type= CalculationType.power_flow)
+        else:
+            dataset = data_path
+        if type(active_load_profile_path) ==  str:
+            active_load_profile = pd.read_parquet(active_load_profile_path)
+        else:
+            active_load_profile = active_load_profile_path
+        if type(reactive_load_profile_path) == str:
+            reactive_load_profile = pd.read_parquet(reactive_load_profile_path)
+        else:
+            reactive_load_profile = reactive_load_profile_path
         if active_load_profile.index.to_list() != reactive_load_profile.index.to_list():
             raise InvalidProfilesError
         model = PowerGridModel(dataset)
@@ -49,7 +56,8 @@ class PowerGridModelling:
                             update_data= update_dataset, 
                             calculation_type= CalculationType.power_flow)
         output_data = model.calculate_power_flow(update_data=update_dataset,
-                                                calculation_method=CalculationMethod.newton_raphson)
+                                                calculation_method=CalculationMethod.newton_raphson,
+                                                output_component_types=["node","line"])
         self.model = model
         self.output_data = output_data
         self.active_load_profile = active_load_profile

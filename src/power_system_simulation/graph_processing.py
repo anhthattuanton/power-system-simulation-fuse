@@ -92,7 +92,7 @@ class GraphProcessor:
         # 6. The graph should be fully connected. (GraphNotFullyConnectedError)
         enabled_edge_ids = [id for id, is_true in zip(edge_ids, edge_enabled) if is_true]
         enabled_pairs = [id for id, is_true in zip(edge_vertex_id_pairs, edge_enabled) if is_true]
-        enabled_vertex_ids = {id for edge in enabled_pairs for id in edge}
+        # enabled_vertex_ids = {id for edge in enabled_pairs for id in edge}
         network = nx.Graph()
         network.add_nodes_from(vertex_ids)
         network.add_edges_from(enabled_pairs)
