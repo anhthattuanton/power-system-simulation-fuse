@@ -1,4 +1,5 @@
 import pandas as pd
+
 from power_system_simulation.grid_analytic import GridAnalysis
 
 # df_result =  pd.read_parquet("tests/test_grid_analytic/active_power_profile.parquet")
@@ -12,10 +13,16 @@ from power_system_simulation.grid_analytic import GridAnalysis
 # print(df_result[8][:]/1e5)
 
 data_path = "tests/test_grid_analytic/input_network_data.json"
-feeder_ids = [16,20]
+feeder_ids = [16, 20]
 active_path = "tests/test_grid_analytic/active_power_profile.parquet"
 reactive_path = "tests/test_grid_analytic/reactive_power_profile.parquet"
 ev_path = "tests/test_grid_analytic/ev_active_power_profile.parquet"
 data_path_3 = "tests/test_grid_analytic/input_network_data_3.json"
 
-data = GridAnalysis(data_path= data_path, feeder_ids= feeder_ids, active_load_profile_path= active_path, reactive_load_profile_path= reactive_path, ev_pool_path= ev_path)
+data = GridAnalysis(
+    data_path=data_path,
+    feeder_ids=feeder_ids,
+    active_load_profile_path=active_path,
+    reactive_load_profile_path=reactive_path,
+    ev_pool_path=ev_path,
+)

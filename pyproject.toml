@@ -14,7 +14,12 @@ classifiers = [
 ]
 requires-python = ">=3.12"
 # add dependencies of your core package, check the license first!
-dependencies = []
+dependencies = ["pandas>=2.2.2",
+                "power-grid-model>=1.7.77",
+                "numpy>=1.26.4",
+                "networkx>=3.3",
+                "pyarrow>=16.1.0",
+                "fastparquet>=2024.5.0"]
 version = "0.1"
 
 [project.optional-dependencies]
