@@ -2,6 +2,7 @@
 This class handles time series power flow calculation with a given input
 in PGM format and load profiles.
 """
+
 from typing import Dict
 
 import numpy as np
@@ -15,6 +16,7 @@ class InvalidProfilesError(Exception):
     """
     Invalid active or reactive load profile
     """
+
     def __init__(self, error: str):
         self.error = error
         print(error)
@@ -32,6 +34,7 @@ class PowerGridModelling:
     * The above two tables has the same number of rows and columns.
         The timestamps and load ids will be matching.
     """
+
     def __init__(
         self,
         data_path: str | Dict[str, np.ndarray | Dict[str, np.ndarray]],
@@ -40,8 +43,7 @@ class PowerGridModelling:
     ) -> None:
         if isinstance(data_path, str):
             dataset = json_deserialize_from_file(data_path)
-            assert_valid_input_data(input_data=dataset, 
-                                    calculation_type=CalculationType.power_flow)
+            assert_valid_input_data(input_data=dataset, calculation_type=CalculationType.power_flow)
         else:
             dataset = data_path
         if isinstance(active_load_profile_path, str):
@@ -55,19 +57,18 @@ class PowerGridModelling:
         if not active_load_profile.index.equals(reactive_load_profile.index):
             raise InvalidProfilesError("Load profiles should have matching timestamps.")
         model = PowerGridModel(dataset)
-        load_profile = initialize_array("update", 
-                                        "sym_load", 
-                                        active_load_profile.shape)
+        load_profile = initialize_array("update", "sym_load", active_load_profile.shape)
         load_profile["id"] = active_load_profile.columns.to_numpy()
         load_profile["p_specified"] = active_load_profile.to_numpy()
         load_profile["q_specified"] = reactive_load_profile.to_numpy()
         update_dataset = {"sym_load": load_profile}
-        assert_valid_batch_data(input_data= dataset, 
-                                update_data= update_dataset, 
-                                calculation_type= CalculationType.power_flow)
-        output_data = model.calculate_power_flow(update_data=update_dataset,
-                                    calculation_method=CalculationMethod.newton_raphson,
-                                    output_component_types=["node", "line"],
+        assert_valid_batch_data(
+            input_data=dataset, update_data=update_dataset, calculation_type=CalculationType.power_flow
+        )
+        output_data = model.calculate_power_flow(
+            update_data=update_dataset,
+            calculation_method=CalculationMethod.newton_raphson,
+            output_component_types=["node", "line"],
         )
         self.model = model
         self.output_data = output_data
@@ -124,8 +125,8 @@ class PowerGridModelling:
         df_p_to = abs(pd.DataFrame(self.output_data["line"]["p_to"]))
         df_p_loss = abs(df_p_from - df_p_to)
         p_loss = []
-        for x in range(0,len(self.output_data["line"]["id"][0])):
-            p_loss.append(np.trapz(list(df_p_loss[x]))/1000)
+        for x in range(0, len(self.output_data["line"]["id"][0])):
+            p_loss.append(np.trapz(list(df_p_loss[x])) / 1000)
         df_loading_pu = pd.DataFrame(self.output_data["line"]["loading"])
         arr_line_id = self.output_data["line"]["id"][0, :]
         loading_idx_max = np.argmax(df_loading_pu, axis=0)

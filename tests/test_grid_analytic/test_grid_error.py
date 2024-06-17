@@ -32,49 +32,34 @@ active_invalid_path = "tests/test_grid_analytic/active_power_profile_invalid.par
 
 def test_NumberOfTransformer():
     with pytest.raises(InvalidNumberOfTransformerError) as error:
-        data = GridAnalysis(
-            data=[data_path_1,active_path,reactive_path,ev_path],
-            feeder_ids= feeder_ids
-        )
+        data = GridAnalysis(data=[data_path_1, active_path, reactive_path, ev_path], feeder_ids=feeder_ids)
     assert str(error.value) == "Grid should only contain one transformer."
 
 
 def test_NumberOfSource():
     with pytest.raises(InvalidNumberOfSourceError) as error:
-        data = GridAnalysis(
-            data= [data_path_2,active_path,reactive_path,ev_path],
-            feeder_ids= feeder_ids
-        )
+        data = GridAnalysis(data=[data_path_2, active_path, reactive_path, ev_path], feeder_ids=feeder_ids)
     assert str(error.value) == "Grid should only contain one source."
 
 
 def test_FeederID():
     feeder_ids_test = [16, 25]
     with pytest.raises(InvalidFeederError) as error:
-        data = GridAnalysis(
-            data= [data_path,active_path,reactive_path,ev_path],
-            feeder_ids= feeder_ids_test
-        )
+        data = GridAnalysis(data=[data_path, active_path, reactive_path, ev_path], feeder_ids=feeder_ids_test)
     assert str(error.value) == "Feeder IDs contain invalid IDs."
 
 
 def test_FeederID_2():
     feeder_ids_test_2 = [16, 16]
     with pytest.raises(FeederIDNotUniqueError) as error:
-        data = GridAnalysis(
-            data= [data_path,active_path,reactive_path,ev_path],
-            feeder_ids= feeder_ids_test_2
-        )
+        data = GridAnalysis(data=[data_path, active_path, reactive_path, ev_path], feeder_ids=feeder_ids_test_2)
     assert str(error.value) == "Feeder IDs contains duplicated IDs."
 
 
 def test_FeederFromNode():
     feeder_ids_test_3 = [16, 17]
     with pytest.raises(InvalidFeederError) as error:
-        data = GridAnalysis(
-            data= [data_path,active_path,reactive_path,ev_path],
-            feeder_ids= feeder_ids_test_3
-        )
+        data = GridAnalysis(data=[data_path, active_path, reactive_path, ev_path], feeder_ids=feeder_ids_test_3)
     assert str(error.value) == "Feeder should be connected to transformer."
 
 
@@ -85,19 +70,15 @@ def test_MatchingTimestamps():
     )
     new_data.to_parquet(active_invalid_path)
     with pytest.raises(InvalidProfilesError) as error:
-        data = GridAnalysis(
-            data= [data_path,active_invalid_path,reactive_path,ev_path],
-            feeder_ids= feeder_ids
-        )
+        data = GridAnalysis(data=[data_path, active_invalid_path, reactive_path, ev_path], feeder_ids=feeder_ids)
     assert str(error.value) == "Load profiles should have matching timestamps."
+
 
 def test_NumberofEVProfile():
     with pytest.raises(InvalidProfilesError) as error:
-        data = GridAnalysis(
-            data= [data_path_3,active_path,reactive_path,ev_path],
-            feeder_ids= feeder_ids
-        )
+        data = GridAnalysis(data=[data_path_3, active_path, reactive_path, ev_path], feeder_ids=feeder_ids)
     assert str(error.value) == "Number of EV profile should be at least the same as number of sym load."
+
 
 def test_matching_time_stamps_ev():
     new_data = pd.read_parquet(ev_path)
@@ -106,11 +87,9 @@ def test_matching_time_stamps_ev():
     )
     new_data.to_parquet(active_invalid_path)
     with pytest.raises(InvalidProfilesError) as error:
-        data = GridAnalysis(
-            data= [data_path,active_path,reactive_path,active_invalid_path],
-            feeder_ids= feeder_ids
-        )
+        data = GridAnalysis(data=[data_path, active_path, reactive_path, active_invalid_path], feeder_ids=feeder_ids)
     assert str(error.value) == "EV pool and load profiles should have matching timestamps."
+
 
 # test input data as dict and dataframes
 # def test_input_data():

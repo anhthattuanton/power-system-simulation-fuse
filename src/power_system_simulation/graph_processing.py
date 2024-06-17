@@ -14,6 +14,7 @@ class IDNotFoundError(Exception):
     """
     id not found
     """
+
     def __init__(self, error: str) -> None:
         self.error = error
 
@@ -22,6 +23,7 @@ class InputLengthDoesNotMatchError(Exception):
     """
     length of edges related variable must be the same
     """
+
     def __init__(self, error: str) -> None:
         self.error = error
 
@@ -30,6 +32,7 @@ class IDNotUniqueError(Exception):
     """
     all id must be unique
     """
+
     def __init__(self, error: str) -> None:
         self.error = error
 
@@ -38,6 +41,7 @@ class GraphNotFullyConnectedError(Exception):
     """
     graph must be fully connected
     """
+
     def __init__(self, error: str) -> None:
         self.error = error
 
@@ -46,6 +50,7 @@ class GraphCycleError(Exception):
     """
     graph must not contain any cycle
     """
+
     def __init__(self, error: str) -> None:
         self.error = error
 
@@ -54,6 +59,7 @@ class EdgeAlreadyDisabledError(Exception):
     """
     related edge has already been disabled
     """
+
     def __init__(self, error: str) -> None:
         self.error = error
 
@@ -85,8 +91,7 @@ class GraphProcessor:
                 raise IDNotUniqueError("Vertex IDs contains ID also in edge IDs.")
         # 2. edge_vertex_id_pairs should have the same length as edge_ids.
         if len(edge_vertex_id_pairs) != len(edge_ids):
-            raise InputLengthDoesNotMatchError(
-                "Edge IDs length not equals to vertex ID pairs length.")
+            raise InputLengthDoesNotMatchError("Edge IDs length not equals to vertex ID pairs length.")
         # 4. edge_enabled should have the same length as edge_ids.
         if len(edge_enabled) != len(edge_ids):
             raise InputLengthDoesNotMatchError("Edge ID length not equal to edge status length.")
