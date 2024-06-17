@@ -17,6 +17,7 @@ class IDNotFoundError(Exception):
 
     def __init__(self, error: str) -> None:
         self.error = error
+        print(error)
 
 
 class InputLengthDoesNotMatchError(Exception):
@@ -26,6 +27,7 @@ class InputLengthDoesNotMatchError(Exception):
 
     def __init__(self, error: str) -> None:
         self.error = error
+        print(error)
 
 
 class IDNotUniqueError(Exception):
@@ -35,6 +37,7 @@ class IDNotUniqueError(Exception):
 
     def __init__(self, error: str) -> None:
         self.error = error
+        print(error)
 
 
 class GraphNotFullyConnectedError(Exception):
@@ -44,6 +47,7 @@ class GraphNotFullyConnectedError(Exception):
 
     def __init__(self, error: str) -> None:
         self.error = error
+        print(error)
 
 
 class GraphCycleError(Exception):
@@ -53,6 +57,7 @@ class GraphCycleError(Exception):
 
     def __init__(self, error: str) -> None:
         self.error = error
+        print(error)
 
 
 class EdgeAlreadyDisabledError(Exception):
@@ -62,6 +67,7 @@ class EdgeAlreadyDisabledError(Exception):
 
     def __init__(self, error: str) -> None:
         self.error = error
+        print(error)
 
 
 class GraphProcessor:
