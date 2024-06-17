@@ -1,3 +1,7 @@
+"""
+someting
+"""
+
 import random
 from math import floor
 from typing import Dict, List, Union
@@ -202,6 +206,9 @@ def load_profiles_assertion(dataset: Dict,
 def alternative_grid_error(grid: GraphProcessor,
                            input_data,
                            edge_id: int):
+    """
+    add something
+    """
     if edge_id not in grid.edge_ids:
         raise IDNotFoundError("Line ID provided is not in line IDs.")
     edge_index = np.asarray(input_data["line"]["id"] == edge_id).nonzero()[0].item()
@@ -362,10 +369,10 @@ class GridAnalysis:
         max_loading_idx = []
         timestamps = []
         if alternative_lines:
-            for line_id in alternative_lines:
+            for _ in alternative_lines:
                 batch_model = model_rep.copy()
                 update_line = initialize_array("update", "line", 1)
-                update_line["id"] = [line_id]
+                update_line["id"] = [_]
                 update_line["to_status"] = [1]
                 update_data = {"line": update_line}
                 batch_model.update(update_data=update_data)
@@ -404,12 +411,11 @@ class GridAnalysis:
         """
         say something
         """
-        total_houses = len(self.input_data["sym_load"]["id"])
-        number_of_feeders = len(self.feeder_ids)
-        number_of_ev = floor(penetration_level * total_houses / number_of_feeders)
+        number_of_ev = floor(penetration_level * 
+                             len(self.input_data["sym_load"]["id"]) / len(self.feeder_ids))
         ev_ids = []
-        for n in self.feeder_ids:
-            nodes_feeder = self.grid.find_downstream_vertices(n)
+        for _ in self.feeder_ids:
+            nodes_feeder = self.grid.find_downstream_vertices(_)
             loads_feeder = []
             for m in nodes_feeder:
                 if m in self.input_data["sym_load"]["node"]:
@@ -417,9 +423,9 @@ class GridAnalysis:
                     loads_feeder.extend(list(self.input_data["sym_load"]["id"][load_idx]))
             ev_ids.extend(random.sample(loads_feeder, number_of_ev))
         ev_profiles = random.sample(list(self.ev_pool.columns), len(ev_ids))
-        for _ in range(len(ev_profiles)):
-            ev_prof = self.ev_pool.iloc[:, ev_profiles[_]]
-            self.active_load_profile[ev_ids[_]] = self.active_load_profile[ev_ids[_]] + ev_prof
+        for idx, val in enumerate(ev_profiles):
+            ev_prof = self.ev_pool.iloc[:, val]
+            self.active_load_profile[ev_ids[idx]] = self.active_load_profile[ev_ids[idx]] + ev_prof
         output = PowerGridModelling(
             data_path=self.input_data,
             active_load_profile_path=self.active_load_profile,
