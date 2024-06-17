@@ -94,12 +94,10 @@ def powerGridModelling(
     """
 
     df_loading_pu = pd.DataFrame(output_data["line"]["loading"])
-    df_p_from = abs(pd.DataFrame(output_data["line"]["p_from"]))
-    df_p_to = abs(pd.DataFrame(output_data["line"]["p_to"]))
-    df_P_loss = abs(df_p_from - df_p_to)
+    df_P_loss = abs(abs(pd.DataFrame(output_data["line"]["p_from"])) - abs(pd.DataFrame(output_data["line"]["p_to"])))
     P_loss = []
-    for x in range(0,len(output_data["line"]["id"][0])):
-        P_loss.append(np.trapz(list(df_P_loss[x]))/1000)
+    for idx, val in enumerate(output_data["line"]["id"][0]):
+        P_loss.append(np.trapz(list(df_P_loss[idx]))/1000)
     arr_line_id = output_data["line"]["id"][0,:]
     loading_idx_max = np.argmax(df_loading_pu,axis= 0)
     loading_max = np.max(df_loading_pu,axis= 0)
