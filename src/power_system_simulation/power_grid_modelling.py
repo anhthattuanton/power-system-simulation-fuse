@@ -2,6 +2,7 @@
 This class handles time series power flow calculation with a given input
 in PGM format and load profiles.
 """
+
 # pylint: disable=line-too-long
 from typing import Dict
 

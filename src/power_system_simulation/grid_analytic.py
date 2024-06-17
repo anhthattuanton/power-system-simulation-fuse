@@ -1,6 +1,7 @@
 """
 This package performs some low voltage grid analytic functions.
 """
+
 # pylint: disable=line-too-long
 import random
 from math import floor
