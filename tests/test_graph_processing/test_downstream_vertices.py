@@ -32,8 +32,9 @@ def test_id_not_found_downstream():
         edge_enabled=edge_enabled,
         source_vertex_id=source_id,
     )
-    with pytest.raises(IDNotFoundError):
+    with pytest.raises(IDNotFoundError) as error:
         data.find_downstream_vertices(edge_id=2)
+    assert str(error.value) == "Invalid edge ID."
 
 
 def test_edge_already_disabled_downstream():

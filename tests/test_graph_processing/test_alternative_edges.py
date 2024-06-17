@@ -32,8 +32,9 @@ def test_id_not_found():
         edge_enabled=edge_enabled,
         source_vertex_id=source_id,
     )
-    with pytest.raises(IDNotFoundError):
+    with pytest.raises(IDNotFoundError) as error:
         data.find_alternative_edges(disabled_edge_id=11)
+    assert str(error.value) == "Invalid edge ID."
 
 
 def test_edge_already_disabled():
@@ -49,8 +50,9 @@ def test_edge_already_disabled():
         edge_enabled=edge_enabled,
         source_vertex_id=source_id,
     )
-    with pytest.raises(EdgeAlreadyDisabledError):
+    with pytest.raises(EdgeAlreadyDisabledError) as error:
         data.find_alternative_edges(disabled_edge_id=7)
+    assert str(error.value) == "Edge is already disabled."
 
 
 def test_no_possible_solution():

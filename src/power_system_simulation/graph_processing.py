@@ -11,27 +11,51 @@ import networkx as nx
 
 
 class IDNotFoundError(Exception):
-    pass
+    """
+    id not found
+    """
+    def __init__(self, error: str) -> None:
+        self.error = error
 
 
 class InputLengthDoesNotMatchError(Exception):
-    pass
+    """
+    length of edges related variable must be the same
+    """
+    def __init__(self, error: str) -> None:
+        self.error = error
 
 
 class IDNotUniqueError(Exception):
-    pass
+    """
+    all id must be unique
+    """
+    def __init__(self, error: str) -> None:
+        self.error = error
 
 
 class GraphNotFullyConnectedError(Exception):
-    pass
+    """
+    graph must be fully connected
+    """
+    def __init__(self, error: str) -> None:
+        self.error = error
 
 
 class GraphCycleError(Exception):
-    pass
+    """
+    graph must not contain any cycle
+    """
+    def __init__(self, error: str) -> None:
+        self.error = error
 
 
 class EdgeAlreadyDisabledError(Exception):
-    pass
+    """
+    related edge has already been disabled
+    """
+    def __init__(self, error: str) -> None:
+        self.error = error
 
 
 class GraphProcessor:
@@ -52,24 +76,29 @@ class GraphProcessor:
 
         # put your implementation here
         # 1. vertex_ids and edge_ids should be unique.
-        if (len(set(vertex_ids)) != len(vertex_ids)) or (len(set(edge_ids)) != len(edge_ids)):
-            raise IDNotUniqueError
+        if len(set(vertex_ids)) != len(vertex_ids):
+            raise IDNotUniqueError("Vertex IDs contains duplicated IDs.")
+        if len(set(edge_ids)) != len(edge_ids):
+            raise IDNotUniqueError("Edge IDs contains duplicated IDs.")
         for n in vertex_ids:
             if n in edge_ids:
-                raise IDNotUniqueError
+                raise IDNotUniqueError("Vertex IDs contains ID also in edge IDs.")
         # 2. edge_vertex_id_pairs should have the same length as edge_ids.
         if len(edge_vertex_id_pairs) != len(edge_ids):
-            raise InputLengthDoesNotMatchError
+            raise InputLengthDoesNotMatchError(
+                "Edge IDs length not equals to vertex ID pairs length.")
         # 3. edge_vertex_id_pairs should contain valid vertex ids.
-        for id in edge_vertex_id_pairs:
-            if id[0] not in vertex_ids or id[1] not in vertex_ids or id[0] == id[1]:
-                raise IDNotFoundError
+        for id_pairs in edge_vertex_id_pairs:
+            if (id_pairs[0] not in vertex_ids or
+                id_pairs[1] not in vertex_ids or
+                id_pairs[0] == id_pairs[1]):
+                raise IDNotFoundError("Vertex ID pairs contains invalid ID.")
         # 4. edge_enabled should have the same length as edge_ids.
         if len(edge_enabled) != len(edge_ids):
-            raise InputLengthDoesNotMatchError
+            raise InputLengthDoesNotMatchError("Edge ID length not equal to edge status length.")
         # 5. source_vertex_id should be a valid vertex id.
         if source_vertex_id not in vertex_ids:
-            raise IDNotFoundError
+            raise IDNotFoundError("Source ID should be a valid vertex ID.")
         # 6. The graph should be fully connected. (GraphNotFullyConnectedError)
         enabled_edge_ids = [id for id, is_true in zip(edge_ids, edge_enabled) if is_true]
         enabled_pairs = [id for id, is_true in zip(edge_vertex_id_pairs, edge_enabled) if is_true]
@@ -78,23 +107,26 @@ class GraphProcessor:
         network.add_nodes_from(vertex_ids)
         network.add_edges_from(enabled_pairs)
         if not nx.is_connected(G=network):
-            raise GraphNotFullyConnectedError
+            raise GraphNotFullyConnectedError("Grid should be fully connected.")
         # 7. The graph should not contain cycles. (GraphCycleError)
         # if len(enabled_vertex_ids) - 1 != len(enabled_edge_ids):
         if nx.cycle_basis(network):
-            raise GraphCycleError
+            raise GraphCycleError("Grid should be acyclic.")
         self.vertex_ids = vertex_ids
         self.edge_ids = edge_ids
         self.edge_vertex_id_pairs = edge_vertex_id_pairs
-        self.edge_enabled = edge_enabled
         self.source_vertex_id = source_vertex_id
         self.enabled_edge_ids = enabled_edge_ids
         self.enabled_pairs = enabled_pairs
         self.network = network
 
     def find_downstream_vertices(self, edge_id: int) -> List[int]:
+        """
+        Find downstream vertices by using dfs on 2 vertices
+        from the corresponding edge
+        """
         if edge_id not in self.edge_ids:
-            raise IDNotFoundError
+            raise IDNotFoundError("Invalid edge ID.")
         if edge_id not in self.enabled_edge_ids:
             return []
         index = self.edge_ids.index(edge_id)
@@ -111,11 +143,15 @@ class GraphProcessor:
         return downstream_vertices
 
     def find_alternative_edges(self, disabled_edge_id: int) -> List[int]:
+        """
+        Find alternative edges by continously enabling each disabled edge
+        and checking if the grid becomes connected.
+        """
         # put your implementation here
         if disabled_edge_id not in self.edge_ids:
-            raise IDNotFoundError
+            raise IDNotFoundError("Invalid edge ID.")
         if disabled_edge_id not in self.enabled_edge_ids:
-            raise EdgeAlreadyDisabledError
+            raise EdgeAlreadyDisabledError("Edge is already disabled.")
         # get data related to disabled_edge_id
         index = self.edge_ids.index(disabled_edge_id)
         vertex_ids = self.edge_vertex_id_pairs[index]

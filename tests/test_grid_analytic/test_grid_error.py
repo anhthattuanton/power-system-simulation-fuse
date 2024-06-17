@@ -5,7 +5,6 @@ from power_grid_model.utils import json_deserialize
 from power_system_simulation.grid_analytic import (
     FeederIDNotUniqueError,
     GridAnalysis,
-    IDNotFoundError,
     InvalidFeederError,
     InvalidNumberOfSourceError,
     InvalidNumberOfTransformerError,

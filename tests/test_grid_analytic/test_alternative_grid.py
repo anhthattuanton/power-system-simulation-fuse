@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import pytest
 from power_grid_model.utils import json_deserialize_from_file
 
@@ -17,9 +16,6 @@ result = GridAnalysis(
     reactive_load_profile_path=reactive_path,
     ev_pool_path=ev_path,
 )
-# df_result = pd.DataFrame(result.alternative_grid_topology(edge_id= 22))
-# print(df_result)
-
 
 def test_alternative_grids():
     result.alternative_grid_topology(edge_id=22)
