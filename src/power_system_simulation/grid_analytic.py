@@ -363,10 +363,10 @@ class GridAnalysis:
         max_loading_idx = []
         timestamps = []
         if alternative_lines:
-            for line_id in alternative_lines:
+            for _ in alternative_lines:
                 batch_model = model_rep.copy()
                 update_line = initialize_array("update", "line", 1)
-                update_line["id"] = [line_id]
+                update_line["id"] = [_]
                 update_line["to_status"] = [1]
                 batch_model.update(update_data={"line": update_line})
                 # load_profile = initialize_array("update", "sym_load", 
