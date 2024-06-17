@@ -105,9 +105,7 @@ class GridAnalysis:
         self.ev_pool = ev_pool
 
     def EV_penetration_level(self, penetration_level: int):
-        total_houses = len(self.input_data["sym_load"]["id"])
-        number_of_feeders = len(self.feeder_ids)
-        nr_of_EV = floor(penetration_level * total_houses / number_of_feeders)
+        nr_of_EV = floor(penetration_level * len(self.input_data["sym_load"]["id"]) / len(self.feeder_ids))
         EV_ids = []
         for n in self.feeder_ids:
             nodes_feeder = self.grid.find_downstream_vertices(n)
@@ -118,9 +116,9 @@ class GridAnalysis:
                     loads_feeder.extend(list(self.input_data["sym_load"]["id"][load_idx]))
             EV_ids.extend(random.sample(loads_feeder, nr_of_EV))
         ev_profiles = random.sample(list(self.ev_pool.columns), len(EV_ids))
-        for _ in range(len(ev_profiles)):
-            ev_prof = self.ev_pool.iloc[:, ev_profiles[_]].tolist()
-            self.active_load_profile[EV_ids[_]] = self.active_load_profile[EV_ids[_]] + ev_prof
+        for idx, val in enumerate(ev_profiles):
+            ev_prof = self.ev_pool.iloc[:, ev_profiles[idx]].tolist()
+            self.active_load_profile[EV_ids[idx]] = self.active_load_profile[EV_ids[idx]] + ev_prof
         df_result_u_pu, df_result_loading_pu = powerGridModelling(dataset= self.input_data,
                                                                   active_load_profile= self.active_load_profile,
                                                                   reactive_load_profile= self.reactive_load_profile) 
