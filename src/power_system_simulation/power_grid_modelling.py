@@ -57,13 +57,15 @@ class PowerGridModelling:
         if not active_load_profile.index.equals(reactive_load_profile.index):
             raise InvalidProfilesError("Load profiles should have matching timestamps.")
         model = PowerGridModel(dataset)
-        load_profile = initialize_array("update", "sym_load", active_load_profile.shape)
-        load_profile["id"] = active_load_profile.columns.to_numpy()
-        load_profile["p_specified"] = active_load_profile.to_numpy()
-        load_profile["q_specified"] = reactive_load_profile.to_numpy()
-        update_dataset = {"sym_load": load_profile}
+        profile = initialize_array("update", "sym_load", active_load_profile.shape)
+        profile["id"] = active_load_profile.columns.to_numpy()
+        profile["p_specified"] = active_load_profile.to_numpy()
+        profile["q_specified"] = reactive_load_profile.to_numpy()
+        update_dataset = {"sym_load": profile}
         assert_valid_batch_data(
-            input_data=dataset, update_data=update_dataset, calculation_type=CalculationType.power_flow
+            input_data=dataset, 
+            update_data=update_dataset, 
+            calculation_type=CalculationType.power_flow
         )
         output_data = model.calculate_power_flow(
             update_data=update_dataset,

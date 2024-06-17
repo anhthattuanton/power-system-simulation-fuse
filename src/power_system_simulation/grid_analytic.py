@@ -141,7 +141,9 @@ def batch_data_assertion(
     load_profile["p_specified"] = active_load_profile.to_numpy()
     load_profile["q_specified"] = reactive_load_profile.to_numpy()
     update_dataset = {"sym_load": load_profile}
-    assert_valid_batch_data(input_data=dataset, update_data=update_dataset, calculation_type=CalculationType.power_flow)
+    assert_valid_batch_data(input_data=dataset, 
+                            update_data=update_dataset, 
+                            calculation_type=CalculationType.power_flow)
     return update_dataset
 
 
@@ -153,8 +155,10 @@ def graph_creator(dataset: Dict[str, np.ndarray | Dict[str, np.ndarray]]) -> Gra
     edge_ids = list(dataset["transformer"]["id"])
     edge_ids = edge_ids + list(dataset["line"]["id"])
     print(edge_ids)
-    edge_vertex_id_pairs = list(zip(dataset["transformer"]["from_node"], dataset["transformer"]["to_node"]))
-    edge_vertex_id_pairs = edge_vertex_id_pairs + list(zip(dataset["line"]["from_node"], dataset["line"]["to_node"]))
+    edge_vertex_id_pairs = list(zip(dataset["transformer"]["from_node"], 
+                                    dataset["transformer"]["to_node"]))
+    edge_vertex_id_pairs = edge_vertex_id_pairs + list(zip(dataset["line"]["from_node"], 
+                                                           dataset["line"]["to_node"]))
     print(edge_vertex_id_pairs)
     status_enabled = list(dataset["transformer"]["to_status"])
     status_enabled = status_enabled + list(dataset["line"]["to_status"])
@@ -181,14 +185,18 @@ def load_profiles_assertion(
     Assert the load profiles and the ev pool
     """
     if not ev_pool.index.equals(active_load_profile.index):
-        raise InvalidProfilesError("EV pool and load profiles should have matching timestamps.")
+        raise InvalidProfilesError(
+            "EV pool and load profiles should have matching timestamps.")
     if not active_load_profile.columns.equals(reactive_load_profile.columns):
-        raise InvalidProfilesError("Active and reactive load profile should contain matching sym loads.")
+        raise InvalidProfilesError(
+            "Active and reactive load profile should contain matching sym loads.")
     if not set(active_load_profile.columns).issubset(set(dataset["sym_load"]["id"])):
-        raise InvalidProfilesError("Active and reactive load profile should contain valid sym loads.")
+        raise InvalidProfilesError(
+            "Active and reactive load profile should contain valid sym loads.")
     # The number of EV charging profile is at least the same as the number of sym_load.
     if len(ev_pool.columns.to_list()) < len(list(dataset["sym_load"]["id"])):
-        raise InvalidProfilesError("Number of EV profile should be at least the same as number of sym load.")
+        raise InvalidProfilesError(
+            "Number of EV profile should be at least the same as number of sym load.")
 
 
 def alternative_grid_error(grid: GraphProcessor, input_data, edge_id: int):
@@ -198,7 +206,8 @@ def alternative_grid_error(grid: GraphProcessor, input_data, edge_id: int):
     if edge_id not in grid.edge_ids:
         raise IDNotFoundError("Line ID provided is not in line IDs.")
     edge_index = np.asarray(input_data["line"]["id"] == edge_id).nonzero()[0].item()
-    if input_data["line"]["from_status"][edge_index] != [1] or input_data["line"]["to_status"][edge_index] != [1]:
+    if (input_data["line"]["from_status"][edge_index] != [1]
+         or input_data["line"]["to_status"][edge_index] != [1]):
         raise LineNotFullyConnectedError("Line is not fully connected on both side.")
 
 
@@ -253,7 +262,9 @@ class GridAnalysis:
         ev_pool = data_unzipped[3]
         simple_error_check(dataset=dataset, feeder_ids=feeder_ids)
         batch_data_assertion(
-            dataset=dataset, active_load_profile=active_load_profile, reactive_load_profile=reactive_load_profile
+            dataset=dataset, 
+            active_load_profile=active_load_profile, 
+            reactive_load_profile=reactive_load_profile
         )
         # if not active_load_profile.index.equals(reactive_load_profile.index):
         #     raise InvalidProfilesError("Load profiles should have matching timestamps.")
@@ -404,7 +415,8 @@ class GridAnalysis:
         randomly add EV charging profiles to the houses.
         Return 2 tables by using power_grid_modelling package.
         """
-        number_of_ev = floor(penetration_level * len(self.input_data["sym_load"]["id"]) / len(self.feeder_ids))
+        number_of_ev = floor(penetration_level * len(self.input_data["sym_load"]["id"]) 
+                             / len(self.feeder_ids))
         ev_ids = []
         for _ in self.feeder_ids:
             nodes_feeder = self.grid.find_downstream_vertices(_)
