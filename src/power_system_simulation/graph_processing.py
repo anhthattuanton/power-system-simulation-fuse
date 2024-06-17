@@ -91,8 +91,8 @@ class GraphProcessor:
                 raise IDNotUniqueError("Vertex IDs contains ID also in edge IDs.")
         # 2. edge_vertex_id_pairs should have the same length as edge_ids.
         if len(edge_vertex_id_pairs) != len(edge_ids):
-            raise InputLengthDoesNotMatchError(
-                "Edge IDs length not equals to vertex ID pairs length.")
+            error = "Edge IDs length not equals to vertex ID pairs length."
+            raise InputLengthDoesNotMatchError(error)
         # 4. edge_enabled should have the same length as edge_ids.
         if len(edge_enabled) != len(edge_ids):
             raise InputLengthDoesNotMatchError("Edge ID length not equal to edge status length.")

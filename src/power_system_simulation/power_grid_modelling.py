@@ -2,7 +2,7 @@
 This class handles time series power flow calculation with a given input
 in PGM format and load profiles.
 """
-
+# pylint: disable=line-too-long
 from typing import Dict
 
 import numpy as np
@@ -62,11 +62,11 @@ class PowerGridModelling:
         profile["p_specified"] = active_load_profile.to_numpy()
         profile["q_specified"] = reactive_load_profile.to_numpy()
         update_dataset = {"sym_load": profile}
-        assert_valid_batch_data(
-            input_data=dataset, 
-            update_data=update_dataset, 
-            calculation_type=CalculationType.power_flow
-        )
+        input_data = dataset
+        update_data = update_dataset
+        calculation_type = CalculationType.power_flow
+        assert_valid_batch_data(input_data=input_data, update_data=update_data, calculation_type=calculation_type)
+
         output_data = model.calculate_power_flow(
             update_data=update_dataset,
             calculation_method=CalculationMethod.newton_raphson,
