@@ -67,7 +67,6 @@ class GraphProcessor:
 
     def __init__(
         self,
-        vertex_ids: List[int],
         edge_ids: List[int],
         edge_vertex_id_pairs: List[Tuple[int, int]],
         edge_enabled: List[bool],
@@ -76,8 +75,9 @@ class GraphProcessor:
 
         # put your implementation here
         # 1. vertex_ids and edge_ids should be unique.
-        if len(set(vertex_ids)) != len(vertex_ids):
-            raise IDNotUniqueError("Vertex IDs contains duplicated IDs.")
+        vertex_ids = {node for pairs in edge_vertex_id_pairs for node in pairs}
+        # if len(set(vertex_ids)) != len(vertex_ids):
+        #     raise IDNotUniqueError("Vertex IDs contains duplicated IDs.")
         if len(set(edge_ids)) != len(edge_ids):
             raise IDNotUniqueError("Edge IDs contains duplicated IDs.")
         for n in vertex_ids:
@@ -87,12 +87,6 @@ class GraphProcessor:
         if len(edge_vertex_id_pairs) != len(edge_ids):
             raise InputLengthDoesNotMatchError(
                 "Edge IDs length not equals to vertex ID pairs length.")
-        # 3. edge_vertex_id_pairs should contain valid vertex ids.
-        for id_pairs in edge_vertex_id_pairs:
-            if (id_pairs[0] not in vertex_ids or
-                id_pairs[1] not in vertex_ids or
-                id_pairs[0] == id_pairs[1]):
-                raise IDNotFoundError("Vertex ID pairs contains invalid ID.")
         # 4. edge_enabled should have the same length as edge_ids.
         if len(edge_enabled) != len(edge_ids):
             raise InputLengthDoesNotMatchError("Edge ID length not equal to edge status length.")

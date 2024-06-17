@@ -9,11 +9,8 @@ ev_path = "tests/test_grid_analytic/ev_active_power_profile.parquet"
 
 def test_EV_penetration_level():
     data = GridAnalysis(
-        data_path=data_path,
-        feeder_ids=feeder_ids,
-        active_load_profile_path=active_path,
-        reactive_load_profile_path=reactive_path,
-        ev_pool_path=ev_path,
+        data= [data_path,active_path,reactive_path,ev_path],
+        feeder_ids= feeder_ids
     )
-    data.EV_penetration_level(0.5)
+    data.ev_penetration_level(0.5)
     assert True
