@@ -156,14 +156,14 @@ def graph_creator(dataset: Dict[str, np.ndarray | Dict[str, np.ndarray]]) -> Gra
     # vertex_ids = list(dataset['node']['id'])
     edge_ids = list(dataset["transformer"]["id"])
     edge_ids = edge_ids + list(dataset["line"]["id"])
-    print(edge_ids)
+    #print(edge_ids)
     edge_vertex_id_pairs = list(zip(dataset["transformer"]["from_node"], dataset["transformer"]["to_node"]))
     edge_vertex_id_pairs += list(zip(dataset["line"]["from_node"], dataset["line"]["to_node"]))
-    print(edge_vertex_id_pairs)
+    #print(edge_vertex_id_pairs)
     status_enabled = list(dataset["transformer"]["to_status"])
     status_enabled = status_enabled + list(dataset["line"]["to_status"])
     edge_enabled = [bool(status) for status in status_enabled]
-    print(edge_enabled)
+    #print(edge_enabled)
     source_vertex_id = int(dataset["source"]["node"])
     grid = GraphProcessor(
         # vertex_ids=vertex_ids,
